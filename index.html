@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Chop Chop Kitchen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #2a1c15;
+    --cream: #fff3dc;
+    --tomato: #e8492f;
+    --tomato-dark: #b8321d;
+    --mustard: #f5b528;
+    --leaf: #5aa83c;
+    --ink: #2a1c15;
+    --sky: #3f8fc9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%; background: var(--bg); color: var(--cream);
+    font-family: 'Fredoka', system-ui, sans-serif; overflow: hidden;
+    user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  body {
+    background:
+      radial-gradient(circle at 20% 0%, #4a3123 0%, transparent 55%),
+      radial-gradient(circle at 100% 100%, #3b1f17 0%, transparent 50%),
+      var(--bg);
+  }
+  img { -webkit-user-drag: none; }
+  #app { display: flex; flex-direction: column; height: 100%; width: 100%; }
+
+  /* HUD */
+  #hud { padding: 8px 10px 4px; display: flex; flex-direction: column; gap: 6px; max-width: 1200px; width: 100%; margin: 0 auto; }
+  #hudTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pill {
+    background: var(--cream); color: var(--ink); border-radius: 999px; padding: 4px 14px;
+    font-weight: 700; font-size: 18px; box-shadow: 0 3px 0 #0006; display: flex; align-items: center; gap: 6px; min-width: 92px; justify-content: center;
+  }
+  .pill svg { width: 18px; height: 18px; flex: 0 0 auto; }
+  .pill.low { background: var(--tomato); color: var(--cream); animation: pulse .6s infinite alternate; }
+  @keyframes pulse { to { transform: scale(1.08); } }
+  #brand { font-weight: 700; font-size: 20px; letter-spacing: .5px; color: var(--mustard); text-shadow: 0 2px 0 #0008; white-space: nowrap; text-align: center; line-height: 1; }
+  #brand small { display: block; font-size: 11px; color: var(--cream); opacity: .7; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  #pauseBtn { background: transparent; border: 2px solid #fff3dc55; color: var(--cream); border-radius: 10px; font: inherit; font-size: 16px; width: 36px; height: 32px; cursor: pointer; }
+  #orders { display: flex; gap: 6px; min-height: 96px; overflow: hidden; }
+  .order {
+    background: var(--cream); color: var(--ink); border-radius: 12px; flex: 0 0 auto; padding: 4px 6px 5px; min-width: 78px; max-width: 132px;
+    box-shadow: 0 3px 0 #0006; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    animation: slideIn .35s cubic-bezier(.3,1.6,.5,1);
+  }
+  @keyframes slideIn { from { transform: translateY(-30px) scale(.6); opacity: 0; } }
+  .order .bar { width: 100%; height: 6px; background: #0002; border-radius: 4px; overflow: hidden; }
+  .order .bar i { display: block; height: 100%; background: var(--leaf); border-radius: 4px; }
+  .order .dish { width: 44px; height: 44px; }
+  .order .name { font-size: 10px; font-weight: 600; opacity: .75; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+  .ings { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+  .ic { position: relative; width: 22px; height: 22px; flex: 0 0 auto; }
+  .ic > img { width: 100%; height: 100%; display: block; }
+  .ic .bd { position: absolute; right: -4px; bottom: -4px; display: flex; }
+  .ic .bd img { width: 12px; height: 12px; display: block; margin-left: -3px; }
+
+  /* Stage */
+  #stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 4px 8px; }
+  canvas#game { display: block; border-radius: 14px; box-shadow: 0 10px 0 #0005, 0 0 0 4px #00000033; }
+
+  /* Touch controls */
+  #touch { display: none; height: 170px; padding: 6px 18px 18px; align-items: center; justify-content: space-between; }
+  body.is-touch #touch { display: flex; }
+  #joyzone { width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; touch-action: none; }
+  #joybase { width: 128px; height: 128px; border-radius: 50%; background: #fff3dc1a; border: 3px solid #fff3dc40; position: relative; }
+  #joyknob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: var(--cream); box-shadow: 0 4px 0 #0007; }
+  #btns { display: flex; gap: 14px; align-items: flex-end; }
+  .tbtn {
+    width: 80px; height: 80px; border-radius: 50%; border: none; font: inherit; font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; line-height: 1; touch-action: none;
+    box-shadow: 0 5px 0 #0008; color: var(--cream); letter-spacing: .5px;
+  }
+  .tbtn:active, .tbtn.on { transform: translateY(3px); box-shadow: 0 2px 0 #0008; }
+  #btnGrab { background: var(--tomato); width: 92px; height: 92px; font-size: 18px; }
+  #btnChop { background: var(--sky); margin-bottom: 30px; }
+  #btnChop.throw { background: var(--mustard); color: var(--ink); }
+
+  /* Overlays */
+  .overlay {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px;
+    background: #1a100bcc; backdrop-filter: blur(4px); z-index: 10; overflow-y: auto;
+  }
+  .overlay.show { display: flex; }
+  .panel {
+    background: var(--cream); color: var(--ink); border-radius: 22px; padding: 22px 22px 20px; max-width: 560px; width: 100%;
+    box-shadow: 0 10px 0 #0008; text-align: center; margin: auto;
+  }
+  .title { font-size: 44px; font-weight: 700; line-height: .95; color: var(--tomato); text-shadow: 0 3px 0 var(--tomato-dark), 0 6px 0 #0002; }
+  .title small { display: block; font-size: 16px; color: var(--ink); text-shadow: none; font-weight: 500; margin-top: 8px; opacity: .75; }
+  #foodRow { display: flex; justify-content: center; gap: 4px; margin: 10px 0 4px; flex-wrap: wrap; }
+  #foodRow img { width: 38px; height: 38px; }
+  .sectionLabel { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; opacity: .6; margin: 12px 0 6px; }
+  .diffs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .diff {
+    font: inherit; text-align: left; border: 3px solid transparent; background: #2a1c1510; border-radius: 14px; padding: 8px 10px; cursor: pointer; color: var(--ink);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .diff b { font-size: 17px; display: flex; align-items: center; gap: 6px; }
+  .diff b .chili { display: inline-flex; gap: 1px; }
+  .diff b .chili i { width: 8px; height: 8px; border-radius: 50%; background: var(--tomato); display: block; }
+  .diff b .chili i.off { background: #2a1c1525; }
+  .diff span { font-size: 12px; opacity: .75; line-height: 1.25; }
+  .diff em { font-size: 11px; font-style: normal; font-weight: 600; opacity: .55; }
+  .diff.sel { border-color: var(--tomato); background: #e8492f1a; }
+  .controls { font-size: 13px; text-align: left; background: #2a1c1510; border-radius: 12px; padding: 10px 12px; line-height: 1.7; margin-top: 12px; }
+  kbd { background: var(--ink); color: var(--cream); border-radius: 5px; padding: 0 6px; font-family: inherit; font-size: 12px; font-weight: 600; }
+  .btnRow { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .btn {
+    font: inherit; font-weight: 700; font-size: 18px; border: none; border-radius: 14px; padding: 12px 22px; cursor: pointer;
+    background: var(--tomato); color: var(--cream); box-shadow: 0 5px 0 var(--tomato-dark); transition: transform .08s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--tomato-dark); }
+  .btn.alt { background: var(--mustard); color: var(--ink); box-shadow: 0 5px 0 #b9850f; }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 3px var(--ink); }
+  .btn.small { font-size: 15px; padding: 9px 16px; }
+  body.is-touch .kbdOnly { display: none !important; }
+  body:not(.is-touch) .touchOnly { display: none !important; }
+  .stars { display: flex; justify-content: center; gap: 6px; margin: 8px 0; }
+  .stars svg { width: 54px; height: 54px; }
+  .bigScore { font-size: 54px; font-weight: 700; color: var(--tomato); line-height: 1; }
+  .stats { display: flex; justify-content: center; gap: 18px; margin-top: 10px; font-size: 15px; }
+  .stats .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .best { margin-top: 6px; font-size: 13px; opacity: .7; }
+
+  /* Recipe book */
+  #book .panel { max-width: 860px; text-align: left; }
+  #book .title { text-align: center; font-size: 38px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; font-size: 13px; margin: 10px 0 4px; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend img { width: 20px; height: 20px; }
+  .tips { font-size: 13px; line-height: 1.55; background: #2a1c1510; border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+  #book h3 { font-size: 16px; margin: 14px 0 6px; color: var(--tomato-dark); display: flex; align-items: baseline; gap: 8px; }
+  #book h3 small { font-size: 12px; color: var(--ink); opacity: .55; font-weight: 500; }
+  .rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+  .rcard { display: flex; gap: 8px; align-items: center; background: #2a1c1510; border-radius: 12px; padding: 6px 8px; }
+  .rcard > img { width: 52px; height: 52px; flex: 0 0 auto; }
+  .rcard b { display: block; font-size: 14px; margin-bottom: 3px; }
+  .rcard .ings { justify-content: flex-start; gap: 5px; }
+  .rcard .pts { font-size: 11px; opacity: .6; margin-top: 2px; }
+
+  @media (min-width: 900px) {
+    .order { min-width: 92px; }
+    .order .dish { width: 50px; height: 50px; }
+    #brand { font-size: 24px; }
+  }
+  @media (max-width: 480px) {
+    .title { font-size: 36px; }
+    .diffs { grid-template-columns: 1fr; }
+    .order { min-width: 64px; padding: 3px 4px; }
+    .order .dish { width: 34px; height: 34px; }
+    .order .name { display: none; }
+    .ic { width: 17px; height: 17px; }
+    .ic .bd img { width: 10px; height: 10px; }
+    #brand { font-size: 15px; }
+    #brand small { display: none; }
+    .pill { font-size: 16px; min-width: 76px; padding: 3px 10px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div id="hudTop">
+      <div class="pill" id="timer"></div>
+      <div id="brand">Chop Chop Kitchen<small id="diffLabel">Easy</small></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="pill" id="score"></div>
+        <button id="pauseBtn" aria-label="Pause">❚❚</button>
+      </div>
+    </div>
+    <div id="orders"></div>
+  </div>
+  <div id="stage"><canvas id="game"></canvas></div>
+  <div id="touch">
+    <div id="joyzone"><div id="joybase"><div id="joyknob"></div></div></div>
+    <div id="btns">
+      <button class="tbtn" id="btnChop">CHOP</button>
+      <button class="tbtn" id="btnGrab">GRAB</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu -->
+<div class="overlay show" id="menu">
+  <div class="panel">
+    <div class="title">Chop Chop<br/>Kitchen<small>Cook fast. Serve faster. Throw the tomatoes.</small></div>
+    <div id="foodRow"></div>
+    <div class="sectionLabel">Pick a difficulty</div>
+    <div class="diffs" id="diffs"></div>
+    <div class="controls kbdOnly">
+      <b>Chef 1:</b> <kbd>W A S D</kbd> move · <kbd>E</kbd>/<kbd>Space</kbd> grab / drop · <kbd>F</kbd> chop (hold) or throw food<br/>
+      <b>Chef 2:</b> <kbd>Arrows</kbd> move · <kbd>Enter</kbd> grab / drop · <kbd>Right Shift</kbd> chop or throw<br/>
+      Solo players can use either set. <kbd>Esc</kbd> pauses.
+    </div>
+    <div class="controls touchOnly">
+      Drag the <b>stick</b> to move · <b>Grab</b> picks up / drops · hold <b>Chop</b> at a cutting board · while holding food, <b>Throw</b> tosses it.
+    </div>
+    <div class="btnRow">
+      <button class="btn" id="play1">Play Solo</button>
+      <button class="btn alt kbdOnly" id="play2">2 Player Co-op</button>
+      <button class="btn ghost" id="openBook">Recipe Book</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div class="overlay" id="pause">
+  <div class="panel">
+    <div class="title" style="font-size:40px">Paused</div>
+    <div class="btnRow">
+      <button class="btn" id="resume">Resume</button>
+      <button class="btn alt" id="pauseBook">Recipe Book</button>
+      <button class="btn ghost" id="quit">Quit to menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe book -->
+<div class="overlay" id="book">
+  <div class="panel">
+    <div class="title">Recipe Book</div>
+    <div class="legend" id="legend"></div>
+    <div class="tips">
+      <b>How it works:</b> grab food from a crate, prepare it (chop, boil or fry), then put everything on a plate and serve it at the blue window.
+      Hold food and press grab on a plate stack to start a plate. Holding a plate, you can grab buns, seaweed and tortillas straight from their crate.
+      Pots take up to 3 items and start cooking on a stove; pans fry one item. Take them off before they burn!
+      <b>Throw</b> food with the chop key (it lands on counters, in pots, on plates, or your teammate catches it).
+    </div>
+    <div id="bookList"></div>
+    <div class="btnRow"><button class="btn" id="closeBook">Close</button></div>
+  </div>
+</div>
+
+<!-- Game over -->
+<div class="overlay" id="over">
+  <div class="panel">
+    <div class="title" style="font-size:38px">Service Over!</div>
+    <div class="stars" id="stars"></div>
+    <div class="bigScore" id="finalScore">0</div>
+    <div class="stats">
+      <div><span class="dot" style="background:#5aa83c"></span><b id="statDelivered">0</b> served</div>
+      <div><span class="dot" style="background:#e8492f"></span><b id="statFailed">0</b> missed</div>
+    </div>
+    <div class="best" id="best"></div>
+    <div class="btnRow">
+      <button class="btn" id="again">Play again</button>
+      <button class="btn alt" id="nextDiff" style="display:none">Next level</button>
+      <button class="btn ghost" id="toMenu">Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // =====================================================================
+  // DATA
+  // =====================================================================
+  // Ingredient rules. chop: can be chopped on a board.
+  // pot / pan: which state ('r' raw or 'c' chopped) the pot/pan accepts.
+  const ING = {
+    tomato:   { label: 'Tomato',   chop: 1, pot: 'c', color: '#e8402a', broth: '#d8402a' },
+    lettuce:  { label: 'Lettuce',  chop: 1, color: '#6cbf3e' },
+    onion:    { label: 'Onion',    chop: 1, pot: 'c', color: '#a24d8c', broth: '#d9a24a' },
+    mushroom: { label: 'Mushroom', chop: 1, pot: 'c', color: '#c0603a', broth: '#9a6a46' },
+    carrot:   { label: 'Carrot',   chop: 1, pot: 'c', color: '#f0862a', broth: '#ef8a2a' },
+    potato:   { label: 'Potato',   chop: 1, pot: 'c', pan: 'c', color: '#c99a5b', broth: '#efd9a0' },
+    bun:      { label: 'Bun',      color: '#e8a24a' },
+    meat:     { label: 'Beef',     chop: 1, pan: 'c', color: '#c93a48' },
+    cheese:   { label: 'Cheese',   chop: 1, color: '#f5c02e' },
+    fish:     { label: 'Fish',     chop: 1, pan: 'c', color: '#5d9bc9' },
+    rice:     { label: 'Rice',     pot: 'r', color: '#f4ecd6', broth: '#f7f3e6' },
+    seaweed:  { label: 'Seaweed',  color: '#2d4a2b' },
+    egg:      { label: 'Egg',      pan: 'r', color: '#fff7ea' },
+    pasta:    { label: 'Pasta',    pot: 'r', color: '#f2cf62', broth: '#f2d27a' },
+    chicken:  { label: 'Chicken',  chop: 1, pot: 'c', pan: 'c', color: '#f1b7a1', broth: '#e9c46a' },
+    tortilla: { label: 'Tortilla', color: '#f3d98f' },
+    shrimp:   { label: 'Shrimp',   pan: 'r', color: '#f4a07e' },
+    pepper:   { label: 'Pepper',   chop: 1, pan: 'c', color: '#4fb046' },
+  };
+  // Map letters (crates)
+  const CRATE = { t: 'tomato', l: 'lettuce', o: 'onion', m: 'mushroom', c: 'carrot', p: 'potato', b: 'bun', k: 'meat', h: 'cheese',
+    f: 'fish', r: 'rice', s: 'seaweed', e: 'egg', n: 'pasta', g: 'chicken', w: 'tortilla', q: 'shrimp', v: 'pepper' };
+  const TYPES = { '#': 'counter', '.': 'floor', C: 'board', S: 'stove', F: 'stove', W: 'window', X: 'trash', P: 'plates' };
+
+  // Token = "<ingredient>:<state>"  states: r raw, c chopped, b boiled (pot), f fried (pan)
+  const RECIPE_DEFS = [
+    // Tier 1 - Easy
+    ['salad', 'Fresh Salad', 1, 'lettuce:c tomato:c'],
+    ['garden', 'Garden Salad', 1, 'lettuce:c tomato:c onion:c'],
+    ['mushsalad', 'Mushroom Salad', 1, 'lettuce:c mushroom:c'],
+    ['tsoup', 'Tomato Soup', 1, 'tomato:b tomato:b tomato:b'],
+    ['osoup', 'Onion Soup', 1, 'onion:b onion:b onion:b'],
+    ['msoup', 'Mushroom Soup', 1, 'mushroom:b mushroom:b mushroom:b'],
+    ['vsoup', 'Veggie Soup', 1, 'tomato:b onion:b mushroom:b'],
+    // Tier 2 - Normal
+    ['csoup', 'Carrot Soup', 2, 'carrot:b carrot:b carrot:b'],
+    ['psoup', 'Potato Soup', 2, 'potato:b potato:b onion:b'],
+    ['minestrone', 'Minestrone', 2, 'tomato:b carrot:b potato:b'],
+    ['crunchy', 'Crunchy Salad', 2, 'lettuce:c carrot:c tomato:c'],
+    ['fries', 'Fries', 2, 'potato:f'],
+    ['cheesyfries', 'Cheesy Fries', 2, 'potato:f cheese:c'],
+    ['burger', 'Burger', 2, 'bun:r meat:f'],
+    ['cheeseburger', 'Cheeseburger', 2, 'bun:r meat:f cheese:c'],
+    ['deluxe', 'Deluxe Burger', 2, 'bun:r meat:f cheese:c lettuce:c tomato:c'],
+    ['combo', 'Burger & Fries', 2, 'bun:r meat:f potato:f'],
+    ['steakmash', 'Steak & Mash', 2, 'meat:f potato:b'],
+    // Tier 3 - Hard
+    ['fishmaki', 'Fish Maki', 3, 'rice:b seaweed:r fish:c'],
+    ['veggiemaki', 'Veggie Maki', 3, 'rice:b seaweed:r carrot:c'],
+    ['sashimi', 'Sashimi', 3, 'fish:c fish:c'],
+    ['fishchips', 'Fish & Chips', 3, 'fish:f potato:f'],
+    ['fishburger', 'Fish Burger', 3, 'bun:r fish:f lettuce:c'],
+    ['eggrice', 'Egg Rice Bowl', 3, 'rice:b egg:f onion:c'],
+    ['breakfast', 'Breakfast Bun', 3, 'bun:r egg:f cheese:c'],
+    ['pomodoro', 'Pasta Pomodoro', 3, 'pasta:b tomato:b'],
+    ['mushpasta', 'Mushroom Pasta', 3, 'pasta:b mushroom:b cheese:c'],
+    ['mac', 'Mac & Cheese', 3, 'pasta:b cheese:c'],
+    // Tier 4 - Master Chef
+    ['chickentaco', 'Chicken Taco', 4, 'tortilla:r chicken:f pepper:c'],
+    ['beeftaco', 'Beef Taco', 4, 'tortilla:r meat:f cheese:c lettuce:c'],
+    ['shrimptaco', 'Shrimp Taco', 4, 'tortilla:r shrimp:f lettuce:c'],
+    ['burrito', 'Big Burrito', 4, 'tortilla:r rice:b meat:f cheese:c'],
+    ['vburrito', 'Veggie Burrito', 4, 'tortilla:r rice:b pepper:f onion:c'],
+    ['tempura', 'Tempura Roll', 4, 'rice:b seaweed:r shrimp:f'],
+    ['chickenrice', 'Chicken Rice', 4, 'rice:b chicken:f'],
+    ['stirfry', 'Stir Fry', 4, 'rice:b chicken:f pepper:f'],
+    ['shrimppasta', 'Shrimp Pasta', 4, 'pasta:b shrimp:f pepper:c'],
+    ['chickensoup', 'Chicken Soup', 4, 'chicken:b carrot:b onion:b'],
+  ];
+
+  function steps(tok) {
+    const [n, s] = tok.split(':'); const I = ING[n];
+    if (s === 'c') return 1;
+    if (s === 'b') return I.pot === 'c' ? 2 : 1;
+    if (s === 'f') return I.pan === 'c' ? 2 : 1;
+    return 0;
+  }
+  function badgesFor(tok) {
+    const [n, s] = tok.split(':'); const I = ING[n];
+    if (s === 'c') return ['knife'];
+    if (s === 'b') return I.pot === 'c' ? ['knife', 'pot'] : ['pot'];
+    if (s === 'f') return I.pan === 'c' ? ['knife', 'pan'] : ['pan'];
+    return [];
+  }
+  const RECIPES = RECIPE_DEFS.map(([id, name, tier, s]) => {
+    const need = s.split(' ').sort();
+    const pts = 10 + need.reduce((a, t) => a + 5 + 5 * steps(t), 0);
+    const time = 30 + need.reduce((a, t) => a + 6 + 7 * steps(t), 0);
+    return { id, name, tier, need, key: need.join('+'), pts, time, complexity: need.reduce((a, t) => a + 1 + steps(t), 0) };
+  });
+
+  const DIFFS = {
+    easy: {
+      name: 'Easy', level: 1, blurb: 'Salads & soups. Patient customers, slow burners.',
+      tiers: [1], time: 180, patience: 1.5, spawn: [16, 22], maxOrders: 3, penalty: 0, cook: 6, burn: 14, chop: 0.9,
+      stars: [80, 180, 300],
+      layout: [
+        '##t#l#o#m##',
+        '#.........#',
+        'C.........W',
+        '#....#....W',
+        'C....#....#',
+        '#.........S',
+        'X.........S',
+        '#.........#',
+        '###P#######',
+      ],
+      spawns: [[3.5, 6.5], [7.5, 6.5]], solo: [5.5, 6.5],
+    },
+    normal: {
+      name: 'Normal', level: 2, blurb: 'Burgers, fries & more soups. Pans join the party.',
+      tiers: [1, 2], time: 210, patience: 1.2, spawn: [15, 20], maxOrders: 4, penalty: 8, cook: 7, burn: 10, chop: 1.0,
+      stars: [100, 240, 400],
+      layout: [
+        '#t#l#o#m#c#p#',
+        '#...........#',
+        'C...........W',
+        '#...........W',
+        'C....###....#',
+        '#....###....b',
+        'C...........k',
+        '#...........h',
+        '##S#S#F#F#XP#',
+      ],
+      spawns: [[3.5, 6.5], [9.5, 6.5]], solo: [6.5, 6.5],
+    },
+    hard: {
+      name: 'Hard', level: 3, blurb: 'Sushi & pasta in a split kitchen. Throw food over the wall!',
+      tiers: [1, 2, 3], time: 240, patience: 1.0, spawn: [14, 19], maxOrders: 5, penalty: 12, cook: 8, burn: 8, chop: 1.1,
+      stars: [120, 280, 460],
+      layout: [
+        '#tlomcp#C#C#W#',
+        '#......#.....W',
+        'C......#.....#',
+        '#............S',
+        '#......#.....S',
+        '#......#.....F',
+        'C......#.....F',
+        '#............#',
+        '#......#.....#',
+        '#bkhfnX#rse#P#',
+      ],
+      spawns: [[3.5, 4.5], [10.5, 4.5]], solo: [4.5, 3.5],
+    },
+    master: {
+      name: 'Master Chef', level: 4, blurb: 'Every recipe: tacos, burritos, stir fry. Total chaos.',
+      tiers: [1, 2, 3, 4], time: 240, patience: 0.9, spawn: [12, 16], maxOrders: 5, penalty: 15, cook: 8, burn: 6, chop: 1.1,
+      stars: [140, 320, 520],
+      layout: [
+        '#tlomcp#C#C#WW#',
+        '#.............#',
+        'C.....#...#...S',
+        '#.....#...#...S',
+        'q.............S',
+        'v.....#...#...F',
+        'g.....#...#...F',
+        'w.............F',
+        'C.............#',
+        '#bkhfnX#rse#P##',
+      ],
+      spawns: [[3.5, 4.5], [11.5, 4.5]], solo: [8.5, 4.5],
+    },
+  };
+  const DIFF_ORDER = ['easy', 'normal', 'hard', 'master'];
+
+  const SPEED = 3.7;
+  const R = 0.32;
+  const THROW_SPEED = 9;
+  const THROW_RANGE = 5.5;
+  const PLATE_MAX = 5;
+
+  // =====================================================================
+  // SPRITES  (all food is drawn with vector paths in a [-1, 1] unit box)
+  // =====================================================================
+  const OUT = '#3b2416', LW = 0.075;
+  const K = (g) => g.__k || 1;
+  function FS(g, fill, lw = LW) {
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (lw) { g.lineWidth = lw * K(g); g.strokeStyle = OUT; g.stroke(); }
+  }
+  function E(g, x, y, rx, ry, fill, rot = 0, lw = LW) { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); FS(g, fill, lw); }
+  function SH(g, x, y, rx, ry, rot = 0, a = 0.45) { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fillStyle = `rgba(255,255,255,${a})`; g.fill(); }
+  function P(g, pts, fill, lw = LW) { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); FS(g, fill, lw); }
+  function BL(g, pts, fill, lw = LW) {
+    const n = pts.length, mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    g.beginPath();
+    const m = mid(pts[n - 1], pts[0]); g.moveTo(m[0], m[1]);
+    for (let i = 0; i < n; i++) { const c = pts[i], nx = mid(pts[i], pts[(i + 1) % n]); g.quadraticCurveTo(c[0], c[1], nx[0], nx[1]); }
+    g.closePath(); FS(g, fill, lw);
+  }
+  function RR(g, x, y, w, h, r, fill, lw = LW) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath(); g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+    FS(g, fill, lw);
+  }
+  function LN(g, pts, color, w) {
+    g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.strokeStyle = color; g.lineWidth = w * K(g); g.stroke();
+  }
+  function LQ(g, x0, y0, cx, cy, x1, y1, color, w) { g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(cx, cy, x1, y1); g.strokeStyle = color; g.lineWidth = w * K(g); g.stroke(); }
+  function AT(g, x, y, s, rot, fn) {
+    const pk = K(g);
+    g.save(); g.translate(x, y); if (rot) g.rotate(rot); g.scale(s, s);
+    g.__k = pk / Math.sqrt(s);
+    fn();
+    g.restore(); g.__k = pk;
+  }
+  function dots(g, list, color, r) { for (const [x, y] of list) E(g, x, y, r, r, color, 0, 0); }
+
+  const FOOD = {
+    // ---------- raw ----------
+    'tomato:r'(g) {
+      E(g, 0, 0.12, 0.8, 0.72, '#e8402a');
+      SH(g, -0.32, -0.12, 0.2, 0.13, -0.6);
+      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i * Math.PI * 2) / 5; E(g, Math.cos(a) * 0.2, -0.52 + Math.sin(a) * 0.12, 0.2, 0.08, '#4f9a2f', a, LW * 0.8); }
+      RR(g, -0.05, -0.8, 0.1, 0.26, 0.04, '#3d7a23', LW * 0.7);
+    },
+    'lettuce:r'(g) {
+      E(g, 0, 0.1, 0.84, 0.74, '#5fae37');
+      E(g, -0.32, 0.02, 0.42, 0.54, '#86c94b', -0.5);
+      E(g, 0.32, 0.02, 0.42, 0.54, '#86c94b', 0.5);
+      E(g, 0, 0.18, 0.4, 0.52, '#a8dc6a');
+      LN(g, [[0, -0.2], [0, 0.6]], '#6cae3c', 0.06);
+      LN(g, [[-0.4, -0.2], [-0.22, 0.32]], '#5f9e34', 0.05);
+      LN(g, [[0.4, -0.2], [0.22, 0.32]], '#5f9e34', 0.05);
+      SH(g, -0.1, -0.12, 0.08, 0.16, 0, 0.35);
+    },
+    'onion:r'(g) {
+      g.beginPath(); g.moveTo(0, -0.86);
+      g.bezierCurveTo(0.15, -0.5, 0.82, -0.4, 0.8, 0.2);
+      g.bezierCurveTo(0.78, 0.7, 0.35, 0.8, 0, 0.8);
+      g.bezierCurveTo(-0.35, 0.8, -0.78, 0.7, -0.8, 0.2);
+      g.bezierCurveTo(-0.82, -0.4, -0.15, -0.5, 0, -0.86);
+      FS(g, '#a24d8c');
+      LQ(g, 0, -0.6, -0.55, 0.05, -0.25, 0.74, '#c98bbd', 0.05);
+      LQ(g, 0, -0.6, 0.55, 0.05, 0.25, 0.74, '#c98bbd', 0.05);
+      LQ(g, 0, -0.6, 0.05, 0.1, 0, 0.78, '#c98bbd', 0.05);
+      SH(g, -0.38, 0.05, 0.1, 0.24, 0.3, 0.4);
+      LN(g, [[-0.1, 0.8], [-0.16, 0.94]], '#e5d3b0', 0.06);
+      LN(g, [[0.05, 0.8], [0.06, 0.95]], '#e5d3b0', 0.06);
+      LN(g, [[0.15, 0.78], [0.22, 0.92]], '#e5d3b0', 0.06);
+    },
+    'mushroom:r'(g) {
+      RR(g, -0.26, -0.05, 0.52, 0.85, 0.2, '#f3e6cc');
+      g.beginPath(); g.moveTo(-0.9, 0.08); g.bezierCurveTo(-0.92, -0.9, 0.92, -0.9, 0.9, 0.08); g.quadraticCurveTo(0, 0.28, -0.9, 0.08); FS(g, '#c0603a');
+      E(g, -0.42, -0.24, 0.13, 0.09, '#f6e7d2', 0, 0); E(g, 0.12, -0.46, 0.15, 0.1, '#f6e7d2', 0, 0);
+      E(g, 0.5, -0.14, 0.11, 0.08, '#f6e7d2', 0, 0); E(g, -0.05, -0.08, 0.09, 0.06, '#f6e7d2', 0, 0);
+      SH(g, -0.45, -0.48, 0.22, 0.08, -0.5, 0.3);
+    },
+    'carrot:r'(g) {
+      g.save(); g.rotate(-0.75);
+      E(g, -0.16, -0.72, 0.1, 0.28, '#4f9a2f', -0.4); E(g, 0.16, -0.72, 0.1, 0.28, '#4f9a2f', 0.4); E(g, 0, -0.8, 0.1, 0.3, '#5fb03a');
+      g.beginPath(); g.moveTo(-0.34, -0.5); g.quadraticCurveTo(0, -0.64, 0.34, -0.5); g.quadraticCurveTo(0.3, 0.2, 0, 0.95); g.quadraticCurveTo(-0.3, 0.2, -0.34, -0.5); FS(g, '#f0862a');
+      LN(g, [[-0.24, -0.2], [-0.02, -0.18]], '#c9661a', 0.05);
+      LN(g, [[0.04, 0.12], [0.2, 0.1]], '#c9661a', 0.05);
+      LN(g, [[-0.14, 0.42], [0.02, 0.43]], '#c9661a', 0.05);
+      SH(g, -0.14, -0.22, 0.06, 0.2, 0, 0.35);
+      g.restore();
+    },
+    'potato:r'(g) {
+      BL(g, [[-0.85, -0.1], [-0.55, -0.62], [0.2, -0.65], [0.85, -0.3], [0.85, 0.28], [0.4, 0.66], [-0.3, 0.62], [-0.82, 0.38]], '#c99a5b');
+      dots(g, [[-0.4, -0.2], [0.25, -0.3], [0.45, 0.2], [-0.15, 0.3], [-0.55, 0.2]], '#8a6235', 0.05);
+      SH(g, -0.35, -0.4, 0.22, 0.09, -0.3, 0.3);
+    },
+    'bun:r'(g) {
+      RR(g, -0.86, 0.1, 1.72, 0.45, 0.2, '#d9893a');
+      g.beginPath(); g.moveTo(-0.9, 0.22); g.bezierCurveTo(-0.92, -0.8, 0.92, -0.8, 0.9, 0.22); g.closePath(); FS(g, '#e8a24a');
+      SH(g, -0.35, -0.32, 0.26, 0.12, -0.3, 0.35);
+      for (const [x, y, r] of [[-0.45, -0.1, 0.4], [-0.1, -0.35, -0.2], [0.3, -0.2, 0.3], [0.05, 0.02, 0.1], [0.55, 0.0, -0.4], [-0.6, 0.12, 0.2]]) E(g, x, y, 0.07, 0.04, '#fff6dc', r, LW * 0.5);
+    },
+    'meat:r'(g) {
+      BL(g, [[-0.88, 0], [-0.6, -0.58], [0.1, -0.62], [0.78, -0.36], [0.88, 0.2], [0.45, 0.64], [-0.3, 0.62], [-0.82, 0.36]], '#c93a48');
+      LQ(g, -0.55, -0.2, -0.15, 0.05, 0.15, -0.32, '#f3c1bf', 0.08);
+      LQ(g, -0.4, 0.32, 0.05, 0.12, 0.45, 0.3, '#f3c1bf', 0.08);
+      E(g, 0.45, -0.08, 0.17, 0.17, '#fff4e6'); E(g, 0.45, -0.08, 0.07, 0.07, '#e6d3b5', 0, 0);
+      SH(g, -0.4, -0.35, 0.2, 0.08, -0.3, 0.3);
+    },
+    'cheese:r'(g) {
+      P(g, [[-0.86, -0.05], [0.86, -0.05], [0.86, 0.5], [-0.86, 0.5]], '#f5c02e');
+      P(g, [[-0.86, -0.05], [0.86, -0.05], [0.35, -0.62]], '#ffd95a');
+      E(g, -0.46, 0.22, 0.13, 0.11, '#d9a020', 0, 0); E(g, 0.18, 0.3, 0.1, 0.09, '#d9a020', 0, 0);
+      E(g, 0.56, 0.12, 0.1, 0.08, '#d9a020', 0, 0); E(g, 0.15, -0.22, 0.09, 0.05, '#e6b52a', 0, 0);
+    },
+    'fish:r'(g) {
+      P(g, [[0.55, 0], [0.96, -0.46], [0.9, 0.46]], '#4a86b4');
+      g.beginPath(); g.moveTo(-0.92, 0); g.bezierCurveTo(-0.6, -0.62, 0.3, -0.62, 0.66, 0); g.bezierCurveTo(0.3, 0.62, -0.6, 0.62, -0.92, 0); FS(g, '#5d9bc9');
+      g.beginPath(); g.moveTo(-0.78, 0.1); g.bezierCurveTo(-0.5, 0.42, 0.2, 0.42, 0.5, 0.12); g.quadraticCurveTo(0, 0.22, -0.78, 0.1); g.fillStyle = '#d4e6f2'; g.fill();
+      P(g, [[-0.1, -0.4], [0.2, -0.66], [0.32, -0.36]], '#4a86b4', LW * 0.8);
+      LQ(g, -0.42, -0.3, -0.32, 0, -0.42, 0.3, '#2f5f86', 0.05);
+      E(g, -0.6, -0.1, 0.11, 0.11, '#ffffff', 0, LW * 0.7); E(g, -0.62, -0.1, 0.05, 0.05, '#2a1c15', 0, 0);
+      SH(g, -0.1, -0.3, 0.25, 0.06, 0, 0.35);
+    },
+    'rice:r'(g) {
+      BL(g, [[-0.72, 0.85], [-0.78, 0.05], [-0.48, -0.5], [0.48, -0.5], [0.78, 0.05], [0.72, 0.85]], '#e2c98f');
+      E(g, 0, -0.52, 0.44, 0.16, '#fffaf0');
+      dots(g, [[-0.2, -0.56], [0.05, -0.6], [0.22, -0.52], [-0.05, -0.48]], '#e8dfc6', 0.04);
+      RR(g, -0.38, -0.42, 0.76, 0.12, 0.05, '#b5874a', LW * 0.7);
+      E(g, 0, 0.3, 0.3, 0.3, '#fff6e0', 0, LW * 0.6);
+      E(g, -0.08, 0.3, 0.06, 0.13, '#e2c98f', 0.3, LW * 0.4); E(g, 0.08, 0.3, 0.06, 0.13, '#e2c98f', -0.3, LW * 0.4);
+    },
+    'seaweed:r'(g) {
+      AT(g, 0.1, 0.1, 1, 0.2, () => RR(g, -0.7, -0.7, 1.4, 1.4, 0.12, '#24391f'));
+      AT(g, -0.06, -0.06, 1, -0.08, () => {
+        RR(g, -0.72, -0.72, 1.44, 1.44, 0.12, '#2f4a2b');
+        for (let i = -2; i <= 2; i++) LN(g, [[-0.6, i * 0.26], [0.6, i * 0.26 + 0.05]], '#41663c', 0.04);
+        SH(g, -0.35, -0.45, 0.3, 0.08, -0.2, 0.18);
+      });
+    },
+    'egg:r'(g) {
+      g.beginPath(); g.moveTo(0, -0.86); g.bezierCurveTo(0.5, -0.86, 0.7, 0.05, 0.66, 0.35); g.bezierCurveTo(0.6, 0.85, -0.6, 0.85, -0.66, 0.35); g.bezierCurveTo(-0.7, 0.05, -0.5, -0.86, 0, -0.86); FS(g, '#fff7ea');
+      g.beginPath(); g.moveTo(-0.6, 0.4); g.bezierCurveTo(-0.5, 0.82, 0.5, 0.82, 0.6, 0.4); g.quadraticCurveTo(0, 0.7, -0.6, 0.4); g.fillStyle = '#efdfc4'; g.fill();
+      SH(g, -0.25, -0.3, 0.12, 0.24, 0.3, 0.9);
+    },
+    'pasta:r'(g) {
+      g.save(); g.rotate(-0.55);
+      RR(g, -0.42, -0.9, 0.84, 1.8, 0.12, '#f2cf62');
+      for (let i = -3; i <= 3; i++) LN(g, [[i * 0.1, -0.84], [i * 0.1, 0.84]], '#d9aa3a', 0.03);
+      RR(g, -0.5, -0.16, 1.0, 0.32, 0.08, '#3f8fc9');
+      LN(g, [[-0.42, 0], [0.42, 0]], '#7fbbe6', 0.04);
+      g.restore();
+    },
+    'chicken:r'(g) {
+      g.save(); g.rotate(-0.7);
+      RR(g, -0.08, 0.05, 0.16, 0.75, 0.06, '#fff4e6');
+      E(g, -0.1, 0.84, 0.12, 0.1, '#fff4e6'); E(g, 0.1, 0.84, 0.12, 0.1, '#fff4e6');
+      BL(g, [[0, -0.9], [0.52, -0.7], [0.58, -0.12], [0.26, 0.26], [-0.26, 0.26], [-0.58, -0.12], [-0.52, -0.7]], '#f1b7a1');
+      SH(g, -0.2, -0.45, 0.12, 0.22, 0.2, 0.4);
+      g.restore();
+    },
+    'tortilla:r'(g) {
+      E(g, 0.08, 0.14, 0.82, 0.7, '#e2c070');
+      E(g, -0.04, 0, 0.82, 0.7, '#f3d98f');
+      dots(g, [[-0.4, -0.2], [0.2, -0.35], [0.45, 0.1], [-0.1, 0.25], [-0.5, 0.25], [0.2, 0.4]], '#d0a050', 0.06);
+    },
+    'shrimp:r'(g) { drawShrimp(g, '#f4a07e', '#e0785a', false); },
+    'pepper:r'(g) {
+      E(g, -0.3, 0.12, 0.42, 0.68, '#3f9b3a', 0.15); E(g, 0.3, 0.12, 0.42, 0.68, '#3f9b3a', -0.15); E(g, 0, 0.14, 0.38, 0.7, '#4fb046');
+      E(g, 0, -0.52, 0.26, 0.1, '#2f6b25', 0, LW * 0.8);
+      RR(g, -0.07, -0.88, 0.14, 0.34, 0.05, '#2f6b25', LW * 0.8);
+      SH(g, -0.18, -0.08, 0.08, 0.3, 0.1, 0.4);
+    },
+
+    // ---------- chopped ----------
+    'tomato:c'(g) {
+      const slice = (x, y, s) => AT(g, x, y, s, 0, () => {
+        E(g, 0, 0, 0.8, 0.76, '#e8402a'); E(g, 0, 0, 0.62, 0.58, '#f2735a', 0, 0);
+        for (let k = 0; k < 3; k++) { const a = k * 2.094 + 0.5; E(g, Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0.17, 0.12, '#f9a58a', a, 0); E(g, Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0.05, 0.03, '#ffe08a', a, 0); }
+        E(g, 0, 0, 0.1, 0.1, '#f9a58a', 0, 0);
+      });
+      slice(0, -0.3, 0.6); slice(-0.34, 0.2, 0.6); slice(0.34, 0.2, 0.6);
+    },
+    'lettuce:c'(g) {
+      for (const [x, y, r, c] of [[-0.4, -0.3, 0.5, '#5fae37'], [0.35, -0.35, -0.6, '#86c94b'], [-0.45, 0.3, -0.4, '#86c94b'], [0.4, 0.3, 0.7, '#5fae37'], [0, 0.05, 0.1, '#a8dc6a'], [0.02, -0.55, 1.4, '#a8dc6a'], [0, 0.55, 1.5, '#6cbf3e']]) {
+        AT(g, x, y, 1, r, () => { E(g, 0, 0, 0.34, 0.2, c); LN(g, [[-0.22, 0], [0.22, 0]], '#4f8f2c', 0.04); });
+      }
+    },
+    'onion:c'(g) {
+      const ring = (x, y, s) => AT(g, x, y, s, 0, () => {
+        E(g, 0, 0, 0.72, 0.72, '#a24d8c'); E(g, 0, 0, 0.54, 0.54, '#f3e3ef');
+        E(g, 0, 0, 0.36, 0.36, '#d9a8cc', 0, LW * 0.6); E(g, 0, 0, 0.2, 0.2, '#f3e3ef', 0, LW * 0.6);
+      });
+      ring(-0.32, 0.18, 0.62); ring(0.34, 0.2, 0.62); ring(0, -0.3, 0.62);
+    },
+    'mushroom:c'(g) {
+      const sl = (x, y, s, r) => AT(g, x, y, s, r, () => {
+        g.beginPath(); g.moveTo(-0.8, 0.05); g.bezierCurveTo(-0.82, -0.8, 0.82, -0.8, 0.8, 0.05);
+        g.lineTo(0.28, 0.05); g.lineTo(0.28, 0.75); g.quadraticCurveTo(0, 0.85, -0.28, 0.75); g.lineTo(-0.28, 0.05); g.closePath(); FS(g, '#f1dcc0');
+        g.beginPath(); g.moveTo(-0.72, 0.0); g.bezierCurveTo(-0.74, -0.7, 0.74, -0.7, 0.72, 0.0); g.strokeStyle = '#9a4a2a'; g.lineWidth = 0.12 * K(g); g.stroke();
+      });
+      sl(-0.36, 0.15, 0.55, -0.3); sl(0.36, 0.15, 0.55, 0.3); sl(0, -0.3, 0.55, 0);
+    },
+    'carrot:c'(g) {
+      const coin = (x, y, s) => AT(g, x, y, s, 0, () => { E(g, 0, 0, 0.62, 0.6, '#f0862a'); E(g, 0, 0, 0.38, 0.36, '#f7ad5a', 0, 0); E(g, 0, 0, 0.12, 0.12, '#f0862a', 0, 0); });
+      coin(-0.36, -0.26, 0.6); coin(0.36, -0.26, 0.6); coin(-0.36, 0.3, 0.6); coin(0.36, 0.3, 0.6);
+    },
+    'potato:c'(g) {
+      for (const [x, y, r] of [[-0.35, -0.1, 0.3], [0.0, -0.05, -0.1], [0.35, -0.12, -0.35], [-0.15, 0.35, 1.3], [0.25, 0.35, 1.7]]) {
+        AT(g, x, y, 1, r, () => { RR(g, -0.12, -0.45, 0.24, 0.9, 0.08, '#f3dc9a'); LN(g, [[-0.08, -0.4], [-0.08, 0.4]], '#c99a5b', 0.04); });
+      }
+    },
+    'cheese:c'(g) {
+      for (const [x, y, r] of [[-0.25, 0.15, -0.3], [0.25, 0.1, 0.25], [0, -0.2, 0]]) {
+        AT(g, x, y, 1, r, () => { RR(g, -0.48, -0.42, 0.96, 0.84, 0.08, '#f9d24a'); E(g, -0.2, -0.12, 0.08, 0.08, '#e3b22a', 0, 0); E(g, 0.2, 0.15, 0.1, 0.09, '#e3b22a', 0, 0); });
+      }
+    },
+    'meat:c'(g) {
+      E(g, 0, 0.12, 0.82, 0.62, '#a8303c');
+      E(g, 0, 0, 0.82, 0.62, '#d34b56');
+      dots(g, [[-0.4, -0.2], [0.1, -0.3], [0.4, 0.05], [-0.15, 0.2], [0.25, 0.3], [-0.5, 0.15], [0.55, -0.2]], '#f0a0a8', 0.06);
+      dots(g, [[-0.2, -0.05], [0.25, -0.1], [0, 0.35], [-0.35, 0.35]], '#a8303c', 0.05);
+    },
+    'fish:c'(g) {
+      for (const [x, y, r] of [[-0.12, -0.25, -0.25], [0.12, 0.25, -0.25]]) {
+        AT(g, x, y, 1, r, () => {
+          RR(g, -0.75, -0.28, 1.5, 0.56, 0.22, '#f68a5c');
+          for (let i = -2; i <= 2; i++) LN(g, [[i * 0.25 - 0.08, -0.22], [i * 0.25 + 0.08, 0.22]], '#ffd9c4', 0.05);
+        });
+      }
+    },
+    'chicken:c'(g) {
+      for (const [x, y, r] of [[-0.32, -0.28, 0.2], [0.32, -0.3, -0.3], [-0.3, 0.3, -0.1], [0.32, 0.3, 0.35]]) {
+        AT(g, x, y, 1, r, () => { RR(g, -0.27, -0.25, 0.54, 0.5, 0.12, '#f4c1ae'); SH(g, -0.08, -0.1, 0.1, 0.05, 0, 0.5); });
+      }
+    },
+    'pepper:c'(g) {
+      for (const [x, y, r] of [[-0.3, -0.25, 0.3], [0.3, -0.2, 1.2], [-0.25, 0.3, 2.4], [0.3, 0.35, 3.8]]) {
+        AT(g, x, y, 1, r, () => {
+          g.beginPath(); g.arc(0, 0.35, 0.45, -2.4, -0.7); g.lineCap = 'round';
+          g.strokeStyle = OUT; g.lineWidth = 0.24 * K(g); g.stroke();
+          g.strokeStyle = '#4fb046'; g.lineWidth = 0.14 * K(g); g.stroke();
+        });
+      }
+    },
+
+    // ---------- boiled ----------
+    'rice:b'(g) {
+      BL(g, [[-0.85, 0.45], [-0.75, -0.1], [-0.35, -0.55], [0.35, -0.55], [0.75, -0.1], [0.85, 0.45]], '#fffdf6');
+      for (const [x, y, r] of [[-0.4, 0, 0.5], [-0.1, -0.25, -0.4], [0.25, -0.1, 0.8], [0.45, 0.2, -0.2], [-0.5, 0.3, 1], [0, 0.15, 0.2], [0.2, -0.38, 1.2], [-0.25, 0.32, -0.8]]) E(g, x, y, 0.08, 0.04, null, r, LW * 0.35);
+    },
+    'pasta:b'(g) {
+      E(g, 0, 0, 0.78, 0.62, '#f2cf62');
+      for (let i = 0; i < 4; i++) { g.beginPath(); g.ellipse(0.05 * i - 0.05, 0.02, 0.62 - i * 0.14, 0.48 - i * 0.1, 0.3 * i, 0.3, 5.5); g.strokeStyle = '#d9aa3a'; g.lineWidth = 0.05 * K(g); g.stroke(); }
+      SH(g, -0.3, -0.25, 0.2, 0.08, -0.3, 0.4);
+    },
+    'tomato:b'(g) { puddle(g, '#d63a22', 'tomato:c'); },
+    'onion:b'(g) { puddle(g, '#d9a24a', 'onion:c'); },
+    'mushroom:b'(g) { puddle(g, '#9a6a46', 'mushroom:c'); },
+    'carrot:b'(g) { puddle(g, '#ef8a2a', 'carrot:c'); },
+    'chicken:b'(g) { puddle(g, '#e9c46a', 'chicken:c'); },
+    'potato:b'(g) {
+      BL(g, [[-0.8, 0.4], [-0.7, -0.2], [-0.3, -0.5], [0.3, -0.52], [0.72, -0.15], [0.8, 0.4]], '#f3e2b0');
+      LQ(g, -0.5, 0, 0, -0.25, 0.5, 0.0, '#dcc68e', 0.05);
+      LQ(g, -0.45, 0.25, 0, 0.05, 0.45, 0.25, '#dcc68e', 0.05);
+      AT(g, 0.05, -0.32, 1, 0.2, () => RR(g, -0.15, -0.1, 0.3, 0.2, 0.04, '#ffd95a', LW * 0.6));
+    },
+
+    // ---------- fried ----------
+    'meat:f'(g) {
+      E(g, 0, 0.12, 0.84, 0.62, '#4f2a17');
+      E(g, 0, 0, 0.84, 0.62, '#8a4a2a');
+      for (const x of [-0.35, 0, 0.35]) LN(g, [[x - 0.2, -0.32], [x + 0.2, 0.32]], '#4f2a17', 0.09);
+      SH(g, -0.3, -0.3, 0.25, 0.08, -0.2, 0.25);
+    },
+    'potato:f'(g) {
+      for (const [x, r] of [[-0.42, -0.2], [-0.22, -0.08], [0, 0.02], [0.2, 0.1], [0.4, 0.22], [-0.1, -0.12], [0.1, 0.15]]) {
+        AT(g, x, -0.2, 1, r, () => RR(g, -0.08, -0.65, 0.16, 0.8, 0.05, '#f6c445', LW * 0.7));
+      }
+      P(g, [[-0.62, -0.1], [0.62, -0.1], [0.45, 0.88], [-0.45, 0.88]], '#e8402a');
+      LN(g, [[-0.55, 0.15], [0.55, 0.15]], '#fff3dc', 0.08);
+    },
+    'fish:f'(g) {
+      BL(g, [[-0.88, 0], [-0.5, -0.45], [0.4, -0.42], [0.85, -0.05], [0.4, 0.42], [-0.5, 0.45]], '#e0a03c');
+      dots(g, [[-0.5, -0.1], [-0.2, 0.15], [0.1, -0.2], [0.35, 0.1], [0.55, -0.1], [-0.3, -0.25], [0, 0.25]], '#b8792a', 0.05);
+      SH(g, -0.25, -0.25, 0.3, 0.07, -0.1, 0.3);
+    },
+    'egg:f'(g) {
+      BL(g, [[-0.85, 0], [-0.6, -0.6], [0.1, -0.7], [0.7, -0.45], [0.85, 0.15], [0.45, 0.65], [-0.2, 0.6], [-0.7, 0.45]], '#fffdf6');
+      E(g, 0.05, -0.02, 0.32, 0.3, '#f5b528');
+      SH(g, -0.05, -0.12, 0.1, 0.07, -0.4, 0.7);
+    },
+    'chicken:f'(g) {
+      g.save(); g.rotate(-0.7);
+      RR(g, -0.08, 0.05, 0.16, 0.75, 0.06, '#fff4e6');
+      E(g, -0.1, 0.84, 0.12, 0.1, '#fff4e6'); E(g, 0.1, 0.84, 0.12, 0.1, '#fff4e6');
+      BL(g, [[0, -0.92], [0.4, -0.85], [0.6, -0.5], [0.6, -0.1], [0.26, 0.28], [-0.26, 0.28], [-0.6, -0.1], [-0.6, -0.5], [-0.4, -0.85]], '#d98c2b');
+      dots(g, [[-0.3, -0.5], [0.1, -0.65], [0.3, -0.3], [-0.1, -0.1], [0.2, 0.05], [-0.35, -0.15]], '#b0661a', 0.06);
+      SH(g, -0.2, -0.5, 0.1, 0.2, 0.2, 0.3);
+      g.restore();
+    },
+    'shrimp:f'(g) { drawShrimp(g, '#e7a33a', '#b8792a', true); },
+    'pepper:f'(g) {
+      for (const [x, y, r] of [[-0.3, -0.25, 0.3], [0.3, -0.2, 1.2], [-0.25, 0.3, 2.4], [0.3, 0.35, 3.8]]) {
+        AT(g, x, y, 1, r, () => {
+          g.beginPath(); g.arc(0, 0.35, 0.45, -2.4, -0.7); g.lineCap = 'round';
+          g.strokeStyle = OUT; g.lineWidth = 0.24 * K(g); g.stroke();
+          g.strokeStyle = '#3d7a2d'; g.lineWidth = 0.14 * K(g); g.stroke();
+          E(g, -0.15, -0.08, 0.05, 0.03, '#1f2a1a', 0, 0);
+        });
+      }
+    },
+    burnt(g) {
+      BL(g, [[-0.7, 0.1], [-0.5, -0.45], [0.1, -0.55], [0.65, -0.25], [0.7, 0.3], [0.2, 0.55], [-0.45, 0.5]], '#1d1814');
+      dots(g, [[-0.3, -0.1], [0.2, 0.1], [0.35, -0.25], [-0.1, 0.3]], '#3a302a', 0.08);
+    },
+  };
+
+  function drawShrimp(g, body, stripe, fried) {
+    const a0 = -Math.PI * 0.95, a1 = Math.PI * 0.32, cx = 0.05, cy = 0.08, RAD = 0.46;
+    const ta = a1 + 0.28;
+    AT(g, cx + Math.cos(ta) * RAD, cy + Math.sin(ta) * RAD, 1, ta + Math.PI / 2, () => P(g, [[0, -0.05], [-0.28, 0.28], [0.28, 0.28]], fried ? '#e0603a' : '#e0603a'));
+    for (let i = 6; i >= 0; i--) {
+      const t = i / 6, a = a0 + (a1 - a0) * t, r = 0.32 - 0.16 * t;
+      E(g, cx + Math.cos(a) * RAD, cy + Math.sin(a) * RAD, r, r, body, 0, LW * 0.8);
+      if (!fried && i > 0) LN(g, [[cx + Math.cos(a) * (RAD - r * 0.7), cy + Math.sin(a) * (RAD - r * 0.7)], [cx + Math.cos(a) * (RAD + r * 0.7), cy + Math.sin(a) * (RAD + r * 0.7)]], stripe, 0.04);
+    }
+    if (fried) dots(g, [[-0.35, -0.35], [0.05, -0.42], [0.4, -0.2], [0.45, 0.2], [-0.15, -0.2], [0.2, -0.05]], stripe, 0.05);
+    const hx = cx + Math.cos(a0) * RAD, hy = cy + Math.sin(a0) * RAD;
+    if (!fried) { LQ(g, hx - 0.1, hy - 0.1, hx - 0.3, hy - 0.6, hx + 0.1, hy - 0.8, '#c95a3c', 0.04); LQ(g, hx, hy - 0.12, hx - 0.05, hy - 0.5, hx + 0.35, hy - 0.7, '#c95a3c', 0.04); }
+    E(g, hx - 0.08, hy - 0.06, 0.06, 0.06, '#2a1c15', 0, 0);
+  }
+  function puddle(g, color, mini) {
+    BL(g, [[-0.82, 0.05], [-0.6, -0.55], [0.1, -0.68], [0.72, -0.4], [0.82, 0.2], [0.4, 0.62], [-0.3, 0.6], [-0.78, 0.38]], color);
+    SH(g, -0.35, -0.3, 0.22, 0.08, -0.3, 0.35);
+    AT(g, 0.15, 0.08, 0.42, 0, () => drawFood(g, mini));
+  }
+  function drawFood(g, tok) {
+    (FOOD[tok] || FOOD[tok.split(':')[0] + ':r'] || FOOD.burnt)(g);
+  }
+
+  // ---------- dishes ----------
+  const TOK_COLOR = {
+    'meat:f': '#7a4026', 'chicken:f': '#d98c2b', 'shrimp:f': '#f08a5a', 'lettuce:c': '#6cbf3e', 'tomato:c': '#e8402a', 'cheese:c': '#f9c932',
+    'pepper:c': '#4fb046', 'pepper:f': '#3d7a2d', 'onion:c': '#c98bbd', 'rice:b': '#fffdf6', 'fish:c': '#f68a5c', 'carrot:c': '#f0862a',
+    'fish:f': '#e0a03c', 'egg:f': '#f5b528', 'mushroom:c': '#f1dcc0',
+  };
+  function hexBlend(cols) {
+    let r = 0, gg = 0, b = 0;
+    for (const c of cols) { const n = parseInt(c.slice(1), 16); r += n >> 16; gg += (n >> 8) & 255; b += n & 255; }
+    const k = cols.length || 1;
+    return `rgb(${(r / k) | 0},${(gg / k) | 0},${(b / k) | 0})`;
+  }
+  function dishStyle(toks) {
+    if (!toks.length) return 'empty';
+    const has = (n) => toks.some((t) => t.startsWith(n + ':'));
+    if (has('bun')) return 'burger';
+    if (has('tortilla') && toks.length > 1) return has('rice') ? 'burrito' : 'taco';
+    if (has('seaweed') && has('rice')) return 'maki';
+    if (toks.every((t) => t.endsWith(':b')) && !has('rice') && !has('pasta')) return 'soup';
+    if (has('pasta')) return 'pasta';
+    if (has('rice')) return 'bowl';
+    if (toks.length > 1 && has('lettuce') && toks.every((t) => t.endsWith(':c'))) return 'salad';
+    return 'scatter';
+  }
+  function plateBase(g) {
+    E(g, 0, 0.08, 0.95, 0.86, 'rgba(0,0,0,0.18)', 0, 0);
+    E(g, 0, 0, 0.95, 0.86, '#ffffff');
+    g.beginPath(); g.ellipse(0, 0, 0.7, 0.62, 0, 0, Math.PI * 2); g.strokeStyle = '#e6dccb'; g.lineWidth = 0.05 * K(g); g.stroke();
+  }
+  const SPOTS = {
+    1: [[0, 0, 0.78]], 2: [[-0.34, 0, 0.56], [0.34, 0, 0.56]], 3: [[-0.33, 0.2, 0.5], [0.33, 0.2, 0.5], [0, -0.3, 0.5]],
+    4: [[-0.32, -0.26, 0.46], [0.32, -0.26, 0.46], [-0.32, 0.28, 0.46], [0.32, 0.28, 0.46]],
+    5: [[-0.36, -0.28, 0.42], [0.36, -0.28, 0.42], [-0.36, 0.3, 0.42], [0.36, 0.3, 0.42], [0, 0, 0.42]],
+  };
+  function scatter(g, toks) {
+    const sp = SPOTS[Math.min(5, toks.length)];
+    toks.forEach((t, i) => { const s = sp[i] || [0, 0, 0.4]; AT(g, s[0], s[1], s[2], 0, () => drawFood(g, t)); });
+  }
+  function drawDish(g, toks) {
+    const st = dishStyle(toks);
+    if (st === 'soup') {
+      E(g, 0, 0.08, 0.95, 0.86, 'rgba(0,0,0,0.18)', 0, 0);
+      E(g, 0, 0, 0.95, 0.86, '#f4ead8');
+      E(g, 0, 0, 0.95, 0.86, null, 0, LW);
+      for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; E(g, Math.cos(a) * 0.87, Math.sin(a) * 0.78, 0.035, 0.035, '#3f8fc9', 0, 0); }
+      E(g, 0, 0, 0.76, 0.68, hexBlend(toks.map((t) => ING[t.split(':')[0]].broth || '#c0a070')), 0, LW * 0.8);
+      SH(g, -0.3, -0.3, 0.25, 0.08, -0.4, 0.3);
+      toks.forEach((t, i) => {
+        const n = t.split(':')[0], mini = ING[n].chop ? n + ':c' : n + ':r';
+        const a = (i / toks.length) * Math.PI * 2 + 0.6;
+        AT(g, Math.cos(a) * 0.36, Math.sin(a) * 0.3, 0.3, 0, () => drawFood(g, mini));
+      });
+      E(g, 0.05, -0.05, 0.12, 0.06, '#5aa83c', 0.6, LW * 0.6); E(g, -0.05, 0.03, 0.12, 0.06, '#6cbf3e', -0.5, LW * 0.6);
+      return;
+    }
+    plateBase(g);
+    const rest = (name) => { const i = toks.findIndex((t) => t.startsWith(name + ':')); return toks.filter((_, j) => j !== i); };
+    switch (st) {
+      case 'empty': return;
+      case 'scatter': scatter(g, toks); return;
+      case 'salad': {
+        AT(g, 0, 0.02, 0.82, 0, () => drawFood(g, 'lettuce:c'));
+        const others = rest('lettuce');
+        const pos = [[-0.24, -0.12], [0.26, -0.1], [0, 0.24], [-0.3, 0.26], [0.3, 0.28]];
+        others.forEach((t, i) => AT(g, pos[i][0], pos[i][1], 0.4, 0, () => drawFood(g, t)));
+        return;
+      }
+      case 'burger': AT(g, 0, 0, 0.86, 0, () => drawBurger(g, rest('bun'))); return;
+      case 'taco': AT(g, 0, 0.08, 0.88, 0, () => drawTaco(g, rest('tortilla'))); return;
+      case 'burrito': AT(g, 0, 0, 0.9, -0.35, () => drawBurrito(g, rest('tortilla'))); return;
+      case 'maki': {
+        const fills = toks.filter((t) => !t.startsWith('rice:') && !t.startsWith('seaweed:'));
+        const cols = fills.length ? fills.map((t) => TOK_COLOR[t] || '#aaa') : ['#fffdf6'];
+        [[-0.4, 0.18], [0.4, 0.18], [0, -0.3]].forEach(([x, y], i) => AT(g, x, y, 1, 0, () => {
+          E(g, 0, 0.06, 0.38, 0.34, '#1d2e1a'); E(g, 0, 0, 0.38, 0.34, '#2f4a2b');
+          E(g, 0, 0, 0.29, 0.26, '#fffdf6', 0, 0); E(g, 0, 0, 0.13, 0.12, cols[i % cols.length], 0, LW * 0.5);
+        }));
+        return;
+      }
+      case 'pasta': {
+        AT(g, 0, 0.04, 0.84, 0, () => drawFood(g, 'pasta:b'));
+        const others = rest('pasta');
+        const sauce = others.filter((t) => t.endsWith(':b'));
+        if (sauce.length) {
+          BL(g, [[-0.4, 0], [-0.25, -0.3], [0.2, -0.32], [0.42, -0.05], [0.25, 0.25], [-0.2, 0.25]], hexBlend(sauce.map((t) => ING[t.split(':')[0]].broth)), LW * 0.7);
+          sauce.forEach((t, i) => { const n = t.split(':')[0]; AT(g, -0.1 + i * 0.2, -0.05, 0.22, 0, () => drawFood(g, n + ':c')); });
+        }
+        const tops = others.filter((t) => !t.endsWith(':b'));
+        const pos = [[0.3, 0.25], [-0.3, 0.25], [0, -0.35]];
+        tops.forEach((t, i) => AT(g, pos[i][0], pos[i][1], 0.38, 0, () => drawFood(g, t)));
+        return;
+      }
+      case 'bowl': {
+        AT(g, 0, 0.1, 0.8, 0, () => drawFood(g, 'rice:b'));
+        const others = rest('rice');
+        const pos = [[-0.28, -0.12, 0.45], [0.28, -0.12, 0.45], [0, 0.22, 0.42], [0, -0.36, 0.38]];
+        others.forEach((t, i) => AT(g, pos[i][0], pos[i][1], pos[i][2], 0, () => drawFood(g, t)));
+        return;
+      }
+    }
+  }
+  function drawBurger(g, fills) {
+    const order = ['meat:f', 'fish:f', 'chicken:f', 'egg:f', 'cheese:c', 'tomato:c', 'lettuce:c'];
+    const sorted = fills.slice().sort((a, b) => (order.indexOf(a) + 10) % 20 - (order.indexOf(b) + 10) % 20);
+    const H = { 'meat:f': 0.22, 'fish:f': 0.22, 'chicken:f': 0.22, 'egg:f': 0.14, 'cheese:c': 0.1, 'tomato:c': 0.11, 'lettuce:c': 0.12 };
+    const total = 0.28 + sorted.reduce((a, t) => a + (H[t] || 0.24), 0) + 0.5;
+    let y = total / 2;
+    RR(g, -0.74, y - 0.28, 1.48, 0.28, 0.13, '#d9893a');
+    y -= 0.28;
+    for (const t of sorted) {
+      const h = H[t] || 0.24;
+      if (t === 'meat:f') RR(g, -0.78, y - h, 1.56, h, 0.1, '#7a4026');
+      else if (t === 'fish:f') RR(g, -0.74, y - h, 1.48, h, 0.1, '#e0a03c');
+      else if (t === 'chicken:f') RR(g, -0.76, y - h, 1.52, h, 0.1, '#d98c2b');
+      else if (t === 'egg:f') { E(g, 0, y - h / 2, 0.76, h / 2 + 0.02, '#fffdf6'); E(g, 0.05, y - h / 2 - 0.02, 0.24, 0.07, '#f5b528', 0, LW * 0.6); }
+      else if (t === 'cheese:c') P(g, [[-0.78, y - h], [0.78, y - h], [0.78, y], [0.5, y], [0.4, y + 0.12], [0.3, y], [-0.25, y], [-0.35, y + 0.14], [-0.45, y], [-0.78, y]], '#f9c932', LW * 0.8);
+      else if (t === 'tomato:c') RR(g, -0.66, y - h, 1.32, h, 0.05, '#e8402a', LW * 0.8);
+      else if (t === 'lettuce:c') { for (let i = -3; i <= 3; i++) E(g, i * 0.22, y - h / 2, 0.17, h / 2 + 0.03, '#6cbf3e', 0, LW * 0.6); }
+      else AT(g, 0, y - h / 2, 0.3, 0, () => drawFood(g, t));
+      y -= h;
+    }
+    g.beginPath(); g.moveTo(-0.78, y + 0.02); g.bezierCurveTo(-0.8, y - 0.68, 0.8, y - 0.68, 0.78, y + 0.02); g.closePath(); FS(g, '#e8a24a');
+    SH(g, -0.3, y - 0.3, 0.22, 0.07, -0.2, 0.35);
+    for (const [x, dy, r] of [[-0.42, 0.18, 0.4], [-0.1, 0.36, -0.2], [0.28, 0.26, 0.3], [0.5, 0.12, -0.4]]) E(g, x, y - dy, 0.06, 0.035, '#fff6dc', r, LW * 0.5);
+  }
+  function drawTaco(g, fills) {
+    const cols = fills.map((t) => TOK_COLOR[t] || '#aaa');
+    for (let i = 0; i < 7; i++) E(g, -0.6 + i * 0.2, -0.02 - (i % 2) * 0.07, 0.16, 0.14, cols[i % cols.length], 0, LW * 0.7);
+    g.beginPath(); g.arc(0, 0.02, 0.82, 0, Math.PI); g.closePath(); FS(g, '#f3d98f');
+    g.beginPath(); g.arc(0, 0.02, 0.66, 0.15, Math.PI - 0.15); g.strokeStyle = '#d9b665'; g.lineWidth = 0.04 * K(g); g.stroke();
+    dots(g, [[-0.4, 0.3], [0.2, 0.5], [0.45, 0.2], [-0.1, 0.65], [-0.55, 0.12]], '#d0a050', 0.05);
+  }
+  function drawBurrito(g, fills) {
+    const cols = fills.map((t) => TOK_COLOR[t] || '#aaa');
+    RR(g, -0.82, -0.34, 1.5, 0.68, 0.34, '#f3d98f');
+    LQ(g, -0.3, -0.32, -0.15, 0, -0.3, 0.32, '#d9b665', 0.05);
+    LQ(g, 0.15, -0.33, 0.3, 0, 0.15, 0.33, '#d9b665', 0.05);
+    E(g, 0.66, 0, 0.18, 0.32, '#f3d98f');
+    E(g, 0.66, 0, 0.12, 0.25, cols[0] || '#fffdf6', 0, LW * 0.5);
+    cols.slice(1).forEach((c, i) => E(g, 0.64 + (i % 2 ? 0.04 : -0.03), -0.12 + i * 0.1, 0.05, 0.05, c, 0, 0));
+    dots(g, [[-0.6, -0.1], [-0.05, 0.15], [0.4, -0.15]], '#d0a050', 0.05);
+  }
+
+  // ---------- UI icons ----------
+  const UI = {
+    knife(g) {
+      E(g, 0, 0, 0.92, 0.92, '#ffffff');
+      AT(g, 0, 0, 1, -0.7, () => {
+        P(g, [[-0.12, -0.15], [0.14, -0.15], [0.14, 0.62], [-0.12, 0.4]], '#cfd6de', LW * 0.9);
+        RR(g, -0.12, -0.7, 0.26, 0.55, 0.08, '#8a5a32', LW * 0.9);
+      });
+    },
+    pot(g) {
+      E(g, 0, 0, 0.92, 0.92, '#ffffff');
+      RR(g, -0.75, -0.12, 0.25, 0.14, 0.06, '#3b3d45', LW * 0.7); RR(g, 0.5, -0.12, 0.25, 0.14, 0.06, '#3b3d45', LW * 0.7);
+      RR(g, -0.55, -0.3, 1.1, 0.75, 0.15, '#9aa0ad', LW * 0.9);
+      E(g, 0, -0.3, 0.55, 0.12, '#d8402a', 0, LW * 0.7);
+    },
+    pan(g) {
+      E(g, 0, 0, 0.92, 0.92, '#ffffff');
+      AT(g, 0, 0, 1, -0.5, () => RR(g, 0.3, -0.07, 0.6, 0.14, 0.06, '#3b2416', 0));
+      E(g, -0.12, 0.05, 0.52, 0.44, '#3a3a40', 0, LW * 0.9);
+      E(g, -0.12, 0.05, 0.38, 0.32, '#5a5a62', 0, 0);
+      E(g, -0.12, 0.05, 0.2, 0.18, '#fffdf6', 0, 0); E(g, -0.1, 0.04, 0.09, 0.08, '#f5b528', 0, 0);
+    },
+    bell(g) {
+      RR(g, -0.75, 0.45, 1.5, 0.18, 0.08, '#c9a227');
+      g.beginPath(); g.moveTo(-0.62, 0.45); g.bezierCurveTo(-0.62, -0.55, 0.62, -0.55, 0.62, 0.45); g.closePath(); FS(g, '#f5c84a');
+      E(g, 0, -0.5, 0.1, 0.1, '#f5c84a');
+      SH(g, -0.28, -0.05, 0.08, 0.25, 0.3, 0.5);
+    },
+    bin(g) {
+      P(g, [[-0.55, -0.4], [0.55, -0.4], [0.42, 0.8], [-0.42, 0.8]], '#7a7f88');
+      for (const x of [-0.22, 0, 0.22]) LN(g, [[x, -0.25], [x * 0.85, 0.65]], '#4b4f57', 0.06);
+      RR(g, -0.68, -0.6, 1.36, 0.2, 0.06, '#5c6068');
+      RR(g, -0.15, -0.76, 0.3, 0.16, 0.05, '#5c6068');
+    },
+    boardknife(g) {
+      AT(g, 0, 0, 1, -0.8, () => {
+        P(g, [[-0.14, -0.25], [0.16, -0.25], [0.16, 0.8], [-0.14, 0.5]], '#d9dee5', LW * 0.9);
+        RR(g, -0.13, -0.85, 0.3, 0.62, 0.08, '#6e4220', LW * 0.9);
+      });
+    },
+    check(g) {
+      E(g, 0, 0, 0.85, 0.85, '#5aa83c');
+      LN(g, [[-0.4, 0.02], [-0.1, 0.32], [0.42, -0.3]], '#ffffff', 0.2);
+    },
+    warn(g) {
+      P(g, [[0, -0.85], [0.9, 0.75], [-0.9, 0.75]], '#f5b528');
+      RR(g, -0.08, -0.35, 0.16, 0.65, 0.07, '#2a1c15', 0);
+      E(g, 0, 0.52, 0.09, 0.09, '#2a1c15', 0, 0);
+    },
+  };
+
+  // ---------- sprite cache ----------
+  const SPR = 160;
+  const sprCache = new Map(), urlCache = new Map();
+  function makeSprite(key, fn) {
+    let c = sprCache.get(key);
+    if (c) return c;
+    c = document.createElement('canvas'); c.width = c.height = SPR;
+    const g = c.getContext('2d');
+    g.translate(SPR / 2, SPR / 2); g.scale(SPR / 2 * 0.92, SPR / 2 * 0.92);
+    g.lineJoin = 'round'; g.lineCap = 'round'; g.__k = 1;
+    fn(g);
+    sprCache.set(key, c);
+    return c;
+  }
+  const foodSpr = (tok) => makeSprite('f:' + tok, (g) => drawFood(g, tok));
+  const dishSpr = (toks) => { const k = toks.slice().sort().join('+'); return makeSprite('d:' + k, (g) => drawDish(g, k ? k.split('+') : [])); };
+  const uiSpr = (name) => makeSprite('u:' + name, (g) => UI[name](g));
+  function sprURL(c) { let u = urlCache.get(c); if (!u) { u = c.toDataURL(); urlCache.set(c, u); } return u; }
+  function ingIconHTML(tok) {
+    const n = tok.split(':')[0];
+    const bd = badgesFor(tok).map((b) => `<img src="${sprURL(uiSpr(b))}" alt="">`).join('');
+    return `<span class="ic" title="${ING[n].label}"><img src="${sprURL(foodSpr(n + ':r'))}" alt="${ING[n].label}"><span class="bd">${bd}</span></span>`;
+  }
+
+  // =====================================================================
+  // DOM / CANVAS
+  // =====================================================================
+  const $ = (id) => document.getElementById(id);
+  const canvas = $('game'), ctx = canvas.getContext('2d');
+  const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if (isTouch) document.body.classList.add('is-touch');
+
+  let COLS = 11, ROWS = 9;
+  let S = 48, dpr = 1;
+  function resize() {
+    const st = $('stage').getBoundingClientRect();
+    S = Math.max(16, Math.floor(Math.min((st.width - 8) / COLS, (st.height - 14) / ROWS)));
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.style.width = COLS * S + 'px';
+    canvas.style.height = ROWS * S + 'px';
+    canvas.width = Math.round(COLS * S * dpr);
+    canvas.height = Math.round(ROWS * S * dpr);
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- Audio ----------
+  let actx = null;
+  function tone(freq, dur, type = 'sine', vol = 0.12, slide = 0, delay = 0) {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = actx.currentTime + delay;
+      const o = actx.createOscillator(), gn = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t0);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t0 + dur);
+      gn.gain.setValueAtTime(vol, t0);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(gn); gn.connect(actx.destination);
+      o.start(t0); o.stop(t0 + dur + 0.02);
+    } catch (e) { /* audio unavailable */ }
+  }
+  const sfx = {
+    pick: () => tone(520, 0.08, 'triangle', 0.1, 200),
+    drop: () => tone(360, 0.08, 'triangle', 0.1, -120),
+    chop: () => tone(180 + Math.random() * 60, 0.05, 'square', 0.05, -80),
+    chopped: () => { tone(660, 0.07, 'triangle', 0.1); tone(990, 0.1, 'triangle', 0.1, 0, 0.07); },
+    plop: () => tone(240, 0.12, 'sine', 0.15, 160),
+    ding: () => { tone(1046, 0.25, 'sine', 0.14); tone(1568, 0.35, 'sine', 0.1, 0, 0.1); },
+    fail: () => tone(220, 0.35, 'sawtooth', 0.08, -120),
+    nope: () => tone(140, 0.1, 'square', 0.05),
+    trash: () => tone(300, 0.18, 'sawtooth', 0.05, -220),
+    done: () => { tone(784, 0.1, 'triangle', 0.1); tone(1046, 0.15, 'triangle', 0.1, 0, 0.1); },
+    tick: () => tone(880, 0.05, 'square', 0.04),
+    go: () => tone(660, 0.3, 'triangle', 0.14, 300),
+    whoosh: () => tone(900, 0.18, 'sine', 0.06, -600),
+    sizzle: () => tone(2000 + Math.random() * 800, 0.04, 'sawtooth', 0.012),
+  };
+
+  // =====================================================================
+  // STATE
+  // =====================================================================
+  let state = 'menu'; // menu | countdown | play | paused | over
+  let mode = 1;
+  let diffKey = 'easy';
+  try { const s = localStorage.getItem('chopchop2-diff'); if (DIFFS[s]) diffKey = s; } catch (e) {}
+  let D = DIFFS[diffKey], pool = [];
+  let tiles, players, orders, score, delivered, failed, timeLeft, orderTimer, countdown, ordersVersion;
+  let floats = [], particles = [], projectiles = [], floorItems = [];
+  let shake = 0;
+
+  const newIng = (name) => ({ kind: 'ing', name, st: 'r', chop: 0 });
+  const newPlate = () => ({ kind: 'plate', contents: [] });
+  const newCookware = (kind) => ({ kind, contents: [], cook: 0, burnt: false, warned: false });
+  const isCW = (it) => it && (it.kind === 'pot' || it.kind === 'pan');
+  const tokenOf = (ing) => ing.name + ':' + ing.st;
+
+  function makePlayer(x, y, color, dark) {
+    return { x, y, fx: 0, fy: 1, held: null, color, dark, walk: 0, chopping: false, chopSfx: 0 };
+  }
+
+  function resetGame() {
+    D = DIFFS[diffKey];
+    pool = RECIPES.filter((r) => D.tiers.includes(r.tier));
+    COLS = D.layout[0].length; ROWS = D.layout.length;
+    tiles = D.layout.map((row, y) => [...row].map((c, x) => {
+      const t = { type: CRATE[c] ? 'crate' : TYPES[c], ing: CRATE[c] || null, x, y, item: null };
+      if (c === 'S') t.item = newCookware('pot');
+      if (c === 'F') t.item = newCookware('pan');
+      return t;
+    }));
+    players = mode === 2
+      ? [makePlayer(D.spawns[0][0], D.spawns[0][1], '#3f8fc9', '#26618e'), makePlayer(D.spawns[1][0], D.spawns[1][1], '#e8492f', '#a5301c')]
+      : [makePlayer(D.solo[0], D.solo[1], '#3f8fc9', '#26618e')];
+    orders = []; score = 0; delivered = 0; failed = 0;
+    timeLeft = D.time; orderTimer = 0.5; ordersVersion = 0;
+    floats = []; particles = []; projectiles = []; floorItems = [];
+    spawnOrder(); spawnOrder();
+    $('diffLabel').textContent = D.name;
+  }
+
+  function spawnOrder() {
+    if (orders.length >= D.maxOrders) return;
+    const maxTier = Math.max(...D.tiers);
+    let list = pool;
+    if (timeLeft > D.time - 25) {
+      // Start each round with the simpler dishes
+      const sorted = pool.slice().sort((a, b) => a.complexity - b.complexity);
+      list = sorted.slice(0, Math.max(3, Math.ceil(sorted.length * 0.4)));
+    }
+    const weights = list.map((r) => (r.tier === maxTier ? 3 : r.tier === maxTier - 1 ? 2 : 1));
+    let roll = Math.random() * weights.reduce((a, b) => a + b, 0), r = list[0];
+    for (let i = 0; i < list.length; i++) { roll -= weights[i]; if (roll <= 0) { r = list[i]; break; } }
+    const t = r.time * D.patience * (mode === 1 ? 1.1 : 1);
+    orders.push({ r, time: t, max: t, id: Math.random() });
+    ordersVersion++;
+  }
+
+  // =====================================================================
+  // INPUT
+  // =====================================================================
+  const keys = {};
+  const P1 = { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', grab: ['KeyE', 'Space'], chop: ['KeyF'] };
+  const P2 = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', grab: ['Enter', 'NumpadEnter', 'Period'], chop: ['ShiftRight', 'Slash'] };
+  const joy = { x: 0, y: 0, id: null };
+  let touchChop = false;
+
+  window.addEventListener('keydown', (e) => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      if ($('book').classList.contains('show')) { closeBook(); return; }
+      togglePause(); return;
+    }
+    keys[e.code] = true;
+    if (e.repeat || state !== 'play') return;
+    const p2 = mode === 2 ? players[1] : players[0];
+    if (P1.grab.includes(e.code)) interact(players[0]);
+    else if (P2.grab.includes(e.code)) interact(p2);
+    else if (P1.chop.includes(e.code)) throwFood(players[0]);
+    else if (P2.chop.includes(e.code)) throwFood(p2);
+  });
+  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (state === 'play') togglePause(); });
+
+  function inputFor(i) {
+    let x = 0, y = 0, chop = false;
+    const sets = mode === 1 ? [P1, P2] : [i === 0 ? P1 : P2];
+    for (const s of sets) {
+      if (keys[s.up]) y -= 1;
+      if (keys[s.down]) y += 1;
+      if (keys[s.left]) x -= 1;
+      if (keys[s.right]) x += 1;
+      if (s.chop.some((c) => keys[c])) chop = true;
+    }
+    if (i === 0) { x += joy.x; y += joy.y; if (touchChop) chop = true; }
+    const m = Math.hypot(x, y);
+    if (m > 1) { x /= m; y /= m; }
+    return { x, y, chop };
+  }
+
+  // Touch joystick
+  const joyzone = $('joyzone'), knob = $('joyknob');
+  function joyMove(e) {
+    const b = $('joybase').getBoundingClientRect();
+    const cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    const max = b.width / 2, m = Math.hypot(dx, dy);
+    if (m > max) { dx = (dx / m) * max; dy = (dy / m) * max; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    let vx = dx / max, vy = dy / max;
+    if (Math.hypot(vx, vy) < 0.2) { vx = 0; vy = 0; }
+    joy.x = vx; joy.y = vy;
+  }
+  function joyEnd() { joy.id = null; joy.x = 0; joy.y = 0; knob.style.transform = ''; }
+  joyzone.addEventListener('pointerdown', (e) => { joy.id = e.pointerId; joyzone.setPointerCapture(e.pointerId); joyMove(e); e.preventDefault(); });
+  joyzone.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) joyMove(e); });
+  joyzone.addEventListener('pointerup', joyEnd);
+  joyzone.addEventListener('pointercancel', joyEnd);
+
+  const btnGrab = $('btnGrab'), btnChop = $('btnChop');
+  btnGrab.addEventListener('pointerdown', (e) => { e.preventDefault(); if (state === 'play') interact(players[0]); });
+  btnChop.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (state === 'play' && throwFood(players[0])) return;
+    touchChop = true; btnChop.classList.add('on'); btnChop.setPointerCapture(e.pointerId);
+  });
+  const chopOff = () => { touchChop = false; btnChop.classList.remove('on'); };
+  btnChop.addEventListener('pointerup', chopOff);
+  btnChop.addEventListener('pointercancel', chopOff);
+
+  // =====================================================================
+  // WORLD RULES
+  // =====================================================================
+  function tileAt(x, y) {
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return null;
+    return tiles[y][x];
+  }
+  function solidAt(x, y) {
+    const t = tileAt(Math.floor(x), Math.floor(y));
+    return !t || t.type !== 'floor';
+  }
+  function collides(x, y) {
+    return solidAt(x - R, y - R) || solidAt(x + R, y - R) || solidAt(x - R, y + R) || solidAt(x + R, y + R);
+  }
+  function targetTile(p) {
+    let t = tileAt(Math.floor(p.x + p.fx * 0.8), Math.floor(p.y + p.fy * 0.8));
+    if (t && t.type !== 'floor') return t;
+    if (Math.abs(p.fx) >= Math.abs(p.fy)) t = tileAt(Math.floor(p.x + Math.sign(p.fx) * 0.8), Math.floor(p.y));
+    else t = tileAt(Math.floor(p.x), Math.floor(p.y + Math.sign(p.fy) * 0.8));
+    return t && t.type !== 'floor' ? t : null;
+  }
+
+  // Multiset helpers: can `a` still become recipe `b`?
+  function subOf(a, b) {
+    const m = {};
+    for (const t of b) m[t] = (m[t] || 0) + 1;
+    for (const t of a) { if (!m[t]) return false; m[t]--; }
+    return true;
+  }
+  const fitsAny = (toks) => pool.some((r) => subOf(toks, r.need));
+  const usedAnywhere = (tok) => pool.some((r) => r.need.includes(tok));
+
+  function prepHint(tok) {
+    const [n, s] = tok.split(':'); const I = ING[n];
+    if (s === 'r' && I.chop && (usedAnywhere(n + ':c') || (I.pot === 'c' && usedAnywhere(n + ':b')) || (I.pan === 'c' && usedAnywhere(n + ':f')))) return 'Chop it first!';
+    if (I.pot === s && usedAnywhere(n + ':b')) return 'Boil it in a pot!';
+    if (I.pan === s && usedAnywhere(n + ':f')) return 'Fry it in a pan!';
+    return 'Not on the menu!';
+  }
+  // Returns null on success, or a hint string explaining why not.
+  function plateAdd(plate, toks) {
+    if (plate.contents.length + toks.length > PLATE_MAX) return 'Plate is full!';
+    const next = plate.contents.concat(toks);
+    if (fitsAny(next)) { plate.contents = next.sort(); return null; }
+    if (toks.length === 1 && !usedAnywhere(toks[0])) return prepHint(toks[0]);
+    return "Those don't go together!";
+  }
+  const cookTime = (cw) => (cw.kind === 'pot' ? D.cook : D.cook * 0.7);
+  const cwSuffix = (cw) => (cw.kind === 'pot' ? ':b' : ':f');
+  const cwReady = (cw) => !cw.burnt && cw.contents.length > 0 && cw.cook >= cookTime(cw);
+  function cookAdd(cw, ing) {
+    const I = ING[ing.name];
+    if (cw.burnt) return 'Burnt! Bin it first';
+    const need = cw.kind === 'pot' ? I.pot : I.pan;
+    if (!need) return cw.kind === 'pot' ? "Can't boil that!" : "Can't fry that!";
+    if (need !== ing.st) return need === 'c' ? 'Chop it first!' : 'Use it whole!';
+    const cap = cw.kind === 'pot' ? 3 : 1;
+    if (cw.contents.length >= cap) return cw.kind === 'pot' ? 'Pot is full!' : 'Pan is busy!';
+    const suf = cwSuffix(cw);
+    const next = cw.contents.concat(ing.name).map((n) => n + suf);
+    if (!fitsAny(next)) return usedAnywhere(ing.name + suf) ? "Those don't go together!" : 'Not on the menu!';
+    const n = cw.contents.length;
+    cw.contents.push(ing.name);
+    cw.cook = (cw.cook * n) / (n + 1);
+    cw.warned = false;
+    return null;
+  }
+  function cwToPlate(cw, plate) {
+    if (cw.burnt) return 'Burnt! Bin it first';
+    if (!cw.contents.length) return cw.kind === 'pot' ? 'The pot is empty' : 'The pan is empty';
+    if (!cwReady(cw)) return 'Still cooking...';
+    const err = plateAdd(plate, cw.contents.map((n) => n + cwSuffix(cw)));
+    if (err) return err;
+    cw.contents = []; cw.cook = 0; cw.warned = false;
+    return null;
+  }
+  function emptyItem(it) {
+    if (it.kind === 'plate') it.contents = [];
+    else if (isCW(it)) { it.contents = []; it.cook = 0; it.burnt = false; it.warned = false; }
+  }
+
+  function addFloat(x, y, text, color) { floats.push({ x, y, text, color, life: 1.3 }); }
+  function say(x, y, msg) { sfx.nope(); addFloat(x, y, msg, '#fff3dc'); }
+  function puff(x, y, color, n = 8) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = 0.6 + Math.random() * 1.6;
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 + Math.random() * 0.3, color, size: 0.05 + Math.random() * 0.05 });
+    }
+  }
+
+  // ---------- floor items ----------
+  function floorNear(p) {
+    const fx = p.x + p.fx * 0.45, fy = p.y + p.fy * 0.45;
+    let best = null, bd = 0.62;
+    for (const f of floorItems) {
+      const d = Math.min(Math.hypot(f.x - fx, f.y - fy), Math.hypot(f.x - p.x, f.y - p.y) + 0.1);
+      if (d < bd) { bd = d; best = f; }
+    }
+    return best;
+  }
+  function dropFloor(p) {
+    let x = p.x + p.fx * 0.5, y = p.y + p.fy * 0.5;
+    if (solidAt(x, y)) { x = p.x; y = p.y; }
+    floorItems.push({ item: p.held, x, y });
+    p.held = null; sfx.drop();
+  }
+
+  // =====================================================================
+  // INTERACTION
+  // =====================================================================
+  function interact(p) {
+    const h = p.held;
+    const t = targetTile(p);
+    const fi = floorNear(p);
+
+    if (!h && fi && (!t || !t.item || Math.hypot(fi.x - p.x, fi.y - p.y) < 0.7)) {
+      floorItems.splice(floorItems.indexOf(fi), 1);
+      p.held = fi.item; sfx.pick(); return;
+    }
+    if (!t) {
+      if (!h) return;
+      // Scoop floor food straight onto a held plate / into a held pot
+      if (fi && fi.item.kind === 'ing' && (h.kind === 'plate' || isCW(h))) {
+        const err = h.kind === 'plate' ? plateAdd(h, [tokenOf(fi.item)]) : cookAdd(h, fi.item);
+        if (err) say(p.x, p.y - 0.6, err);
+        else { floorItems.splice(floorItems.indexOf(fi), 1); sfx.pick(); }
+        return;
+      }
+      dropFloor(p); return;
+    }
+
+    const cx = t.x + 0.5, cy = t.y + 0.25;
+
+    if (!h) {
+      if (t.item) { p.held = t.item; t.item = null; sfx.pick(); return; }
+      if (t.type === 'crate') { p.held = newIng(t.ing); sfx.pick(); return; }
+      if (t.type === 'plates') { p.held = newPlate(); sfx.pick(); return; }
+      return;
+    }
+
+    if (t.type === 'trash') {
+      if (h.kind === 'ing') p.held = null; else emptyItem(h);
+      sfx.trash(); puff(cx, cy + 0.2, '#777', 6);
+      return;
+    }
+    if (t.type === 'window') {
+      if (h.kind === 'plate' && h.contents.length) deliver(p, h, cx, cy);
+      else if (h.kind === 'ing') say(cx, cy, 'Put it on a plate!');
+      else if (isCW(h)) say(cx, cy, 'Pour it on a plate!');
+      else say(cx, cy, 'The plate is empty!');
+      return;
+    }
+    if (t.type === 'plates') {
+      if (h.kind === 'ing') {
+        const pl = newPlate();
+        const err = plateAdd(pl, [tokenOf(h)]);
+        if (err) say(cx, cy, err); else { p.held = pl; sfx.pick(); }
+      } else if (h.kind === 'plate' && !h.contents.length) { p.held = null; sfx.drop(); }
+      else if (h.kind === 'plate') say(cx, cy, 'Serve it at the window!');
+      else say(cx, cy, 'Put a plate on a counter first');
+      return;
+    }
+    if (t.type === 'crate') {
+      const fresh = newIng(t.ing);
+      let err = 'Hands are full!';
+      if (h.kind === 'plate') err = plateAdd(h, [tokenOf(fresh)]);
+      else if (isCW(h)) err = cookAdd(h, fresh);
+      if (err) say(cx, cy, err); else sfx.plop();
+      return;
+    }
+
+    if (t.item) {
+      const it = t.item;
+      let err = 'That spot is taken!';
+      if (h.kind === 'ing') {
+        if (it.kind === 'plate') { err = plateAdd(it, [tokenOf(h)]); if (!err) { p.held = null; sfx.drop(); } }
+        else if (isCW(it)) { err = cookAdd(it, h); if (!err) { p.held = null; sfx.plop(); puff(cx, cy + 0.2, ING[h.name].color, 6); } }
+      } else if (h.kind === 'plate') {
+        if (it.kind === 'ing') { err = plateAdd(h, [tokenOf(it)]); if (!err) { t.item = null; sfx.pick(); } }
+        else if (isCW(it)) { err = cwToPlate(it, h); if (!err) sfx.plop(); }
+        else if (it.kind === 'plate' && h.contents.length) { err = plateAdd(it, h.contents); if (!err) { h.contents = []; sfx.drop(); } }
+      } else if (isCW(h)) {
+        if (it.kind === 'ing') { err = cookAdd(h, it); if (!err) { t.item = null; sfx.plop(); } }
+        else if (it.kind === 'plate') { err = cwToPlate(h, it); if (!err) sfx.plop(); }
+      }
+      if (err) say(cx, cy, err);
+      return;
+    }
+
+    // Place on an empty tile
+    const ok = t.type === 'counter' || (t.type === 'board' && h.kind === 'ing') || (t.type === 'stove' && isCW(h));
+    if (ok) { t.item = h; p.held = null; sfx.drop(); }
+    else say(cx, cy, t.type === 'stove' ? 'Only pots & pans go here' : 'Only food goes on the board');
+  }
+
+  function throwFood(p) {
+    const it = p.held;
+    if (!it || it.kind !== 'ing') return false;
+    p.held = null;
+    projectiles.push({ item: it, x: p.x, y: p.y, vx: p.fx * THROW_SPEED, vy: p.fy * THROW_SPEED, d: 0, from: p, age: 0 });
+    sfx.whoosh();
+    return true;
+  }
+  function landOnTile(q, t) {
+    const it = q.item, cx = t.x + 0.5, cy = t.y + 0.3;
+    if (t.type === 'trash') { sfx.trash(); puff(cx, cy + 0.2, '#777', 6); return; }
+    if (t.item) {
+      if (isCW(t.item) && !cookAdd(t.item, it)) { sfx.plop(); puff(cx, cy + 0.2, ING[it.name].color, 8); addFloat(cx, cy, 'Swish!', '#f5b528'); return; }
+      if (t.item.kind === 'plate' && !plateAdd(t.item, [tokenOf(it)])) { sfx.drop(); addFloat(cx, cy, 'Swish!', '#f5b528'); return; }
+    } else if (t.type === 'counter' || t.type === 'board') { t.item = it; sfx.drop(); return; }
+    floorItems.push({ item: it, x: q.x, y: q.y }); sfx.drop();
+  }
+  function updateProjectiles(dt) {
+    const N = 4;
+    for (const q of projectiles) {
+      for (let k = 0; k < N && !q.done; k++) {
+        const nx = q.x + (q.vx * dt) / N, ny = q.y + (q.vy * dt) / N;
+        q.d += (THROW_SPEED * dt) / N; q.age += dt / N;
+        for (const p of players) {
+          if ((p !== q.from || q.age > 0.4) && !p.held && Math.hypot(p.x - nx, p.y - ny) < 0.45) {
+            p.held = q.item; q.done = true; sfx.pick(); addFloat(p.x, p.y - 0.7, 'Nice catch!', '#f5b528'); break;
+          }
+        }
+        if (q.done) break;
+        if (solidAt(nx, ny)) { landOnTile(q, tileAt(Math.floor(nx), Math.floor(ny))); q.done = true; break; }
+        q.x = nx; q.y = ny;
+        if (q.d >= THROW_RANGE) { floorItems.push({ item: q.item, x: q.x, y: q.y }); q.done = true; sfx.drop(); }
+      }
+    }
+    projectiles = projectiles.filter((q) => !q.done);
+  }
+
+  function deliver(p, plate, cx, cy) {
+    const key = plate.contents.slice().sort().join('+');
+    const idx = orders.findIndex((o) => o.r.key === key);
+    p.held = null;
+    if (idx >= 0) {
+      const o = orders[idx];
+      const tip = Math.round((o.time / o.max) * 10);
+      const gained = o.r.pts + tip;
+      score += gained; delivered++;
+      orders.splice(idx, 1); ordersVersion++;
+      sfx.ding();
+      addFloat(cx - 0.4, cy, `+${gained}`, '#f5b528');
+      puff(cx, cy, '#f5b528', 14);
+      if (orders.length < 2) orderTimer = Math.min(orderTimer, 2);
+    } else {
+      sfx.fail();
+      const r = RECIPES.find((x) => x.key === key);
+      addFloat(cx - 0.4, cy, r ? `Nobody ordered ${r.name}!` : 'Wrong dish!', '#e8492f');
+    }
+  }
+
+  // =====================================================================
+  // UPDATE
+  // =====================================================================
+  function update(dt) {
+    for (const f of floats) { f.life -= dt; f.y -= dt * 0.8; }
+    floats = floats.filter((f) => f.life > 0);
+    for (const q of particles) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.92; q.vy *= 0.92; }
+    particles = particles.filter((q) => q.life > 0);
+    if (shake > 0) shake = Math.max(0, shake - dt * 3);
+
+    if (state === 'countdown') {
+      const before = Math.ceil(countdown);
+      countdown -= dt;
+      if (Math.ceil(countdown) !== before && countdown > 0) sfx.tick();
+      if (countdown <= 0) { state = 'play'; sfx.go(); }
+      return;
+    }
+    if (state !== 'play') return;
+
+    const prevSec = Math.ceil(timeLeft);
+    timeLeft -= dt;
+    if (timeLeft <= 10 && Math.ceil(timeLeft) !== prevSec) sfx.tick();
+    if (timeLeft <= 0) { timeLeft = 0; endGame(); return; }
+
+    // Orders
+    orderTimer -= dt;
+    if (orderTimer <= 0) { spawnOrder(); orderTimer = D.spawn[0] + Math.random() * (D.spawn[1] - D.spawn[0]); }
+    if (!orders.length) spawnOrder();
+    for (const o of orders) o.time -= dt;
+    const expired = orders.filter((o) => o.time <= 0);
+    if (expired.length) {
+      for (const o of expired) { score = Math.max(0, score - D.penalty); failed++; }
+      orders = orders.filter((o) => o.time > 0); ordersVersion++;
+      sfx.fail(); shake = 1;
+      addFloat(COLS / 2, 1.2, D.penalty ? `-${D.penalty} Missed!` : 'Missed!', '#e8492f');
+    }
+
+    // Players
+    players.forEach((p, i) => {
+      const inp = inputFor(i);
+      const sp = SPEED * dt;
+      const dx = inp.x * sp, dy = inp.y * sp;
+      if (dx || dy) {
+        const m = Math.hypot(inp.x, inp.y);
+        p.fx = inp.x / m; p.fy = inp.y / m;
+        p.walk += dt * m;
+      }
+      if (dx) {
+        if (!collides(p.x + dx, p.y)) p.x += dx;
+        else p.x = dx > 0 ? Math.floor(p.x + dx + R) - R - 0.001 : Math.ceil(p.x + dx - R) + R + 0.001;
+      }
+      if (dy) {
+        if (!collides(p.x, p.y + dy)) p.y += dy;
+        else p.y = dy > 0 ? Math.floor(p.y + dy + R) - R - 0.001 : Math.ceil(p.y + dy - R) + R + 0.001;
+      }
+
+      p.chopping = false;
+      if (inp.chop && !p.held) {
+        const t = targetTile(p);
+        if (t && t.type === 'board' && t.item && t.item.kind === 'ing' && t.item.st === 'r' && ING[t.item.name].chop) {
+          p.chopping = true; p.chopTile = t;
+          t.item.chop += dt / D.chop;
+          p.chopSfx -= dt;
+          if (p.chopSfx <= 0) { sfx.chop(); p.chopSfx = 0.18; puff(t.x + 0.5, t.y + 0.5, ING[t.item.name].color, 2); }
+          if (t.item.chop >= 1) { t.item.st = 'c'; t.item.chop = 1; sfx.chopped(); puff(t.x + 0.5, t.y + 0.5, ING[t.item.name].color, 10); }
+        }
+      }
+    });
+
+    if (players.length === 2) {
+      const [a, b] = players;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.001;
+      if (d < R * 2) {
+        const push = (R * 2 - d) / 2, nx = dx / d, ny = dy / d;
+        if (!collides(a.x - nx * push, a.y - ny * push)) { a.x -= nx * push; a.y -= ny * push; }
+        if (!collides(b.x + nx * push, b.y + ny * push)) { b.x += nx * push; b.y += ny * push; }
+      }
+    }
+
+    updateProjectiles(dt);
+
+    // Cooking
+    for (const row of tiles) for (const t of row) {
+      if (t.type !== 'stove' || !isCW(t.item)) continue;
+      const cw = t.item;
+      if (cw.burnt || !cw.contents.length) continue;
+      const ct = cookTime(cw);
+      cw.cook += dt;
+      if (cw.cook >= ct && !cw.warned) { cw.warned = true; sfx.done(); addFloat(t.x + 0.5, t.y + 0.1, 'Ready!', '#5aa83c'); }
+      if (cw.cook >= ct + D.burn) {
+        cw.burnt = true; sfx.fail(); shake = 0.8;
+        addFloat(t.x + 0.5, t.y + 0.1, 'Burnt!', '#e8492f');
+        puff(t.x + 0.5, t.y + 0.5, '#333', 16);
+      }
+      if (cw.kind === 'pan' && Math.random() < dt * 8) sfx.sizzle();
+      if (Math.random() < dt * 6) {
+        const smoky = cw.cook > ct + D.burn * 0.5;
+        particles.push({ x: t.x + 0.3 + Math.random() * 0.4, y: t.y + 0.4, vx: (Math.random() - 0.5) * 0.2, vy: -0.6, life: 0.9, color: smoky ? '#555' : '#ffffff', size: 0.06 + Math.random() * 0.04, steam: true });
+      }
+    }
+  }
+
+  // =====================================================================
+  // DRAW
+  // =====================================================================
+  function rr(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function circle(x, y, r, fill, stroke, lw) {
+    ctx.beginPath(); ctx.arc(x, y, Math.max(0.1, r), 0, Math.PI * 2);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+  }
+  function spr(c, x, y, size, rot) {
+    if (rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.drawImage(c, -size / 2, -size / 2, size, size); ctx.restore(); }
+    else ctx.drawImage(c, x - size / 2, y - size / 2, size, size);
+  }
+  function bar(cx, cy, w, frac, color) {
+    const h = Math.max(5, S * 0.12);
+    rr(cx - w / 2 - 2, cy - h / 2 - 2, w + 4, h + 4, h);
+    ctx.fillStyle = '#2a1c15'; ctx.fill();
+    rr(cx - w / 2, cy - h / 2, Math.max(h, w * Math.min(1, frac)), h, h / 2);
+    ctx.fillStyle = color; ctx.fill();
+  }
+  function drawCounterBase(px, py, top = '#c98a4b', side = '#8a5a32') {
+    ctx.fillStyle = side; ctx.fillRect(px, py, S, S);
+    ctx.fillStyle = top; ctx.fillRect(px + 1, py + 1, S - 2, S * 0.84);
+    ctx.fillStyle = '#ffffff22'; ctx.fillRect(px + 1, py + 1, S - 2, S * 0.08);
+  }
+
+  function drawTile(t, time) {
+    const px = t.x * S, py = t.y * S;
+    switch (t.type) {
+      case 'floor':
+        ctx.fillStyle = (t.x + t.y) % 2 ? '#f2dfc1' : '#e8cfa9';
+        ctx.fillRect(px, py, S, S);
+        break;
+      case 'counter': drawCounterBase(px, py); break;
+      case 'crate': {
+        drawCounterBase(px, py);
+        rr(px + S * 0.08, py + S * 0.07, S * 0.84, S * 0.72, S * 0.08);
+        ctx.fillStyle = '#9b6232'; ctx.fill();
+        ctx.strokeStyle = '#6e4220'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = '#6e422055';
+        ctx.fillRect(px + S * 0.08, py + S * 0.3, S * 0.84, 2);
+        ctx.fillRect(px + S * 0.08, py + S * 0.55, S * 0.84, 2);
+        spr(foodSpr(t.ing + ':r'), px + S / 2, py + S * 0.43, S * 0.66);
+        break;
+      }
+      case 'board': {
+        drawCounterBase(px, py);
+        rr(px + S * 0.1, py + S * 0.1, S * 0.8, S * 0.64, S * 0.1);
+        ctx.fillStyle = '#f4ddb0'; ctx.fill();
+        ctx.strokeStyle = '#b98a50'; ctx.lineWidth = 2; ctx.stroke();
+        if (!t.item) { ctx.globalAlpha = 0.55; spr(uiSpr('boardknife'), px + S / 2, py + S * 0.42, S * 0.45); ctx.globalAlpha = 1; }
+        break;
+      }
+      case 'stove': {
+        drawCounterBase(px, py, '#5b5b66', '#2f2f36');
+        const cw = t.item;
+        const hot = isCW(cw) && cw.contents.length > 0 && !cw.burnt;
+        if (hot) {
+          const g = ctx.createRadialGradient(px + S / 2, py + S * 0.42, 2, px + S / 2, py + S * 0.42, S * 0.42);
+          g.addColorStop(0, `rgba(255,140,40,${0.7 + Math.sin(time * 10) * 0.15})`); g.addColorStop(1, 'rgba(255,80,20,0)');
+          ctx.fillStyle = g; ctx.fillRect(px, py, S, S);
+        }
+        circle(px + S / 2, py + S * 0.42, S * 0.33, null, hot ? '#ff9a3c' : '#2a2a30', 3);
+        circle(px + S / 2, py + S * 0.42, S * 0.22, null, hot ? '#ffb86b' : '#2a2a30', 2);
+        break;
+      }
+      case 'window': {
+        ctx.fillStyle = '#26618e'; ctx.fillRect(px, py, S, S);
+        ctx.fillStyle = '#3f8fc9'; ctx.fillRect(px + 1, py + 1, S - 2, S * 0.84);
+        for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? '#fff3dc' : '#e8492f'; ctx.fillRect(px + 1, py + (S * 0.84 / 4) * i + 1, S - 2, S * 0.07); }
+        spr(uiSpr('bell'), px + S * 0.5, py + S * 0.46 + Math.sin(time * 3 + t.y + t.x) * S * 0.03, S * 0.46);
+        break;
+      }
+      case 'trash':
+        drawCounterBase(px, py);
+        spr(uiSpr('bin'), px + S / 2, py + S * 0.42, S * 0.62);
+        break;
+      case 'plates':
+        drawCounterBase(px, py);
+        for (let i = 3; i >= 0; i--) circle(px + S / 2, py + S * 0.5 - i * S * 0.05, S * 0.32, '#ffffff', '#cfc4b2', 2);
+        circle(px + S / 2, py + S * 0.35, S * 0.2, null, '#e6dccb', 2);
+        break;
+    }
+  }
+
+  function drawCookware(it, cx, cy, sc, time) {
+    const r = S * 0.36 * sc;
+    const n = it.contents.length, ct = cookTime(it);
+    if (it.kind === 'pot') {
+      ctx.fillStyle = '#2b2b30';
+      rr(cx - r - S * 0.1 * sc, cy - S * 0.05 * sc, S * 0.14 * sc, S * 0.1 * sc, 3); ctx.fill();
+      rr(cx + r - S * 0.04 * sc, cy - S * 0.05 * sc, S * 0.14 * sc, S * 0.1 * sc, 3); ctx.fill();
+      circle(cx, cy, r, '#b9bcc7', '#3b3d45', 2.5);
+      circle(cx - r * 0.25, cy - r * 0.3, r * 0.5, '#ffffff22');
+      if (it.burnt) { circle(cx, cy, r * 0.78, '#1a1a1a'); spr(foodSpr('burnt'), cx, cy, r * 1.2); }
+      else if (n) {
+        const col = hexBlend(it.contents.map((nm) => ING[nm].broth || '#c0a070'));
+        circle(cx, cy, r * 0.78, it.cook > 0 ? col : '#5a5c66');
+        it.contents.forEach((nm, i) => {
+          const a = time * (it.cook > 0 ? 1.4 : 0) + i * 2.1;
+          spr(foodSpr(nm + ':' + ING[nm].pot), cx + Math.cos(a) * r * 0.36, cy + Math.sin(a) * r * 0.3, S * 0.3 * sc);
+        });
+        if (it.cook > 0) for (let i = 0; i < 3; i++) {
+          const a = time * 2 + i * 2.1;
+          circle(cx + Math.cos(a) * r * 0.45, cy + Math.sin(a * 1.3) * r * 0.4, r * (0.08 + 0.05 * Math.sin(time * 6 + i)), '#ffffff66');
+        }
+      } else circle(cx, cy, r * 0.78, '#5a5c66');
+    } else {
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(-0.5);
+      rr(r * 0.8, -S * 0.045 * sc, r * 0.9, S * 0.09 * sc, 3); ctx.fillStyle = '#2b2b30'; ctx.fill();
+      ctx.restore();
+      circle(cx, cy, r * 0.95, '#3a3a40', '#1f1f24', 2.5);
+      circle(cx, cy, r * 0.75, '#55555e');
+      if (it.burnt) spr(foodSpr('burnt'), cx, cy, r * 1.4);
+      else if (n) {
+        const nm = it.contents[0];
+        const tok = it.cook >= ct * 0.6 ? nm + ':f' : nm + ':' + ING[nm].pan;
+        spr(foodSpr(tok), cx, cy + (it.cook > 0 ? Math.sin(time * 20) * S * 0.01 : 0), r * 1.45);
+      }
+    }
+    if (sc < 1) return;
+    if (it.burnt) return;
+    if (n && it.cook < ct) {
+      if (it.cook > 0) bar(cx, cy - S * 0.48, S * 0.7, it.cook / ct, '#5aa83c');
+      else if (it.kind === 'pot') for (let i = 0; i < 3; i++) circle(cx + (i - 1) * S * 0.14, cy - S * 0.48, S * 0.05, i < n ? '#f5b528' : '#2a1c1555', '#2a1c15', 1.5);
+    } else if (n) {
+      const danger = (it.cook - ct) / D.burn;
+      if (danger > 0.35 && Math.sin(time * (8 + danger * 14)) > 0) {
+        circle(cx, cy, r + 4, null, '#e8492f', 3);
+        spr(uiSpr('warn'), cx, cy - S * 0.5, S * 0.34);
+      } else spr(uiSpr('check'), cx, cy - S * 0.5, S * 0.3);
+    }
+  }
+
+  function drawItem(it, cx, cy, sc, time) {
+    if (it.kind === 'ing') spr(foodSpr(tokenOf(it)), cx, cy, S * 0.62 * sc);
+    else if (it.kind === 'plate') spr(dishSpr(it.contents), cx, cy, S * 0.86 * sc);
+    else drawCookware(it, cx, cy, sc, time);
+  }
+
+  function drawPlayer(p, time, idx) {
+    const cx = p.x * S, cy = p.y * S;
+    const bob = Math.abs(Math.sin(p.walk * 9)) * S * 0.04;
+    const fx = p.fx, fy = p.fy, px = -fy, py = fx;
+    ctx.beginPath(); ctx.ellipse(cx, cy + S * 0.18, S * 0.3, S * 0.16, 0, 0, Math.PI * 2); ctx.fillStyle = '#00000030'; ctx.fill();
+    const hx = cx + fx * S * 0.4, hy = cy + fy * S * 0.4 - bob;
+    if (p.held && fy < -0.3) drawItem(p.held, hx, hy, 0.72, time);
+    circle(cx, cy - bob, S * 0.3, p.color, p.dark, 3);
+    circle(cx + fx * S * 0.08, cy + fy * S * 0.08 - bob, S * 0.17, '#fff3dc');
+    const chopWiggle = p.chopping ? Math.sin(time * 40) * S * 0.06 : 0;
+    for (const s of [-1, 1]) {
+      const hx2 = cx + fx * S * 0.26 + px * s * S * 0.2 + fx * (s > 0 ? chopWiggle : 0);
+      const hy2 = cy + fy * S * 0.26 + py * s * S * 0.2 - bob + fy * (s > 0 ? chopWiggle : 0);
+      circle(hx2, hy2, S * 0.08, '#f6c79a', '#c98a5a', 1.5);
+    }
+    const hcx = cx + fx * S * 0.04, hcy = cy - bob - S * 0.06;
+    circle(hcx, hcy, S * 0.2, '#f6c79a', '#c98a5a', 1.5);
+    for (const s of [-1, 1]) circle(hcx + fx * S * 0.11 + px * s * S * 0.07, hcy + fy * S * 0.11 + py * s * S * 0.07, S * 0.03, '#2a1c15');
+    const tx = hcx - fx * S * 0.06, ty = hcy - fy * S * 0.06 - S * 0.03;
+    circle(tx, ty, S * 0.15, '#ffffff', '#d9cfbf', 1.5);
+    circle(tx - S * 0.06, ty - S * 0.04, S * 0.07, '#ffffff');
+    circle(tx + S * 0.06, ty - S * 0.05, S * 0.07, '#ffffff');
+    if (p.held && fy >= -0.3) drawItem(p.held, hx, hy, 0.72, time);
+    if (players.length > 1) {
+      ctx.font = `700 ${Math.round(S * 0.22)}px Fredoka, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = p.dark; ctx.fillText('P' + (idx + 1), cx, cy - S * 0.62 - bob);
+    }
+  }
+
+  function draw(time) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, COLS * S, ROWS * S);
+    if (!tiles) return;
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - 0.5) * shake * 6, (Math.random() - 0.5) * shake * 6);
+
+    for (const row of tiles) for (const t of row) drawTile(t, time);
+
+    if (state === 'play' || state === 'countdown') {
+      for (const p of players) {
+        const t = targetTile(p);
+        if (!t) continue;
+        ctx.save();
+        ctx.globalAlpha = 0.6 + Math.sin(time * 6) * 0.2;
+        rr(t.x * S + 2, t.y * S + 2, S - 4, S - 4, S * 0.12);
+        ctx.strokeStyle = '#fff3dc'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    for (const row of tiles) for (const t of row) {
+      if (!t.item) continue;
+      const cx = t.x * S + S / 2, cy = t.y * S + S * 0.42;
+      drawItem(t.item, cx, cy, 1, time);
+      if (t.type === 'board' && t.item.kind === 'ing' && t.item.st === 'r' && t.item.chop > 0) bar(cx, t.y * S + S * 0.05, S * 0.7, t.item.chop, '#f5b528');
+    }
+    // knife while chopping
+    for (const p of players) if (p.chopping && p.chopTile) {
+      const t = p.chopTile;
+      spr(uiSpr('boardknife'), t.x * S + S * 0.62, t.y * S + S * 0.3 - Math.abs(Math.sin(time * 22)) * S * 0.12, S * 0.42, 0.3);
+    }
+
+    // floor items
+    for (const f of floorItems) {
+      ctx.beginPath(); ctx.ellipse(f.x * S, f.y * S + S * 0.12, S * 0.22, S * 0.09, 0, 0, Math.PI * 2); ctx.fillStyle = '#00000025'; ctx.fill();
+      drawItem(f.item, f.x * S, f.y * S, 0.7, time);
+    }
+
+    for (const q of particles) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, q.life * 2)) * (q.steam ? 0.5 : 1);
+      circle(q.x * S, q.y * S, q.size * S * (q.steam ? 1 + (0.9 - q.life) : 1), q.color);
+    }
+    ctx.globalAlpha = 1;
+
+    players.map((p, i) => [p, i]).sort((a, b) => a[0].y - b[0].y).forEach(([p, i]) => drawPlayer(p, time, i));
+
+    // flying food
+    for (const q of projectiles) {
+      const z = (0.35 + Math.sin(Math.PI * Math.min(1, q.d / THROW_RANGE)) * 0.35) * S;
+      ctx.beginPath(); ctx.ellipse(q.x * S, q.y * S + S * 0.12, S * 0.18, S * 0.07, 0, 0, Math.PI * 2); ctx.fillStyle = '#00000030'; ctx.fill();
+      spr(foodSpr(tokenOf(q.item)), q.x * S, q.y * S - z, S * 0.5, q.age * 14);
+    }
+
+    for (const f of floats) {
+      ctx.globalAlpha = Math.min(1, f.life * 1.5);
+      ctx.font = `700 ${Math.round(S * 0.32)}px Fredoka, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const w = ctx.measureText(f.text).width;
+      const x = Math.max(w / 2 + 4, Math.min(COLS * S - w / 2 - 4, f.x * S));
+      const y = Math.max(S * 0.25, f.y * S);
+      ctx.lineWidth = 4; ctx.strokeStyle = '#2a1c15'; ctx.lineJoin = 'round';
+      ctx.strokeText(f.text, x, y);
+      ctx.fillStyle = f.color; ctx.fillText(f.text, x, y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    if (state === 'countdown') {
+      ctx.fillStyle = '#2a1c1599'; ctx.fillRect(0, 0, COLS * S, ROWS * S);
+      const n = Math.ceil(countdown);
+      const label = n > 3 ? D.name + '!' : n > 0 ? String(n) : 'Go!';
+      const frac = countdown - Math.floor(countdown);
+      const size = S * (n > 3 ? 1.0 : 1.8) * (1 + frac * 0.3);
+      ctx.font = `700 ${Math.round(size)}px Fredoka, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 8; ctx.strokeStyle = '#2a1c15'; ctx.strokeText(label, (COLS * S) / 2, (ROWS * S) / 2);
+      ctx.fillStyle = '#f5b528'; ctx.fillText(label, (COLS * S) / 2, (ROWS * S) / 2);
+    }
+  }
+
+  // =====================================================================
+  // HUD
+  // =====================================================================
+  const ICON_CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="8.5" fill="#fff" stroke="#2a1c15" stroke-width="2.5"/><path d="M12 9v4.5l3 2" stroke="#2a1c15" stroke-width="2.5" fill="none" stroke-linecap="round"/><rect x="9.5" y="1.5" width="5" height="3" rx="1.2" fill="#2a1c15"/></svg>';
+  const ICON_COIN = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#f5b528" stroke="#2a1c15" stroke-width="2.5"/><circle cx="12" cy="12" r="5" fill="none" stroke="#b9850f" stroke-width="2"/></svg>';
+  const starSVG = (on) => `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="${on ? '#f5b528' : '#2a1c1522'}" stroke="${on ? '#2a1c15' : '#2a1c1533'}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+  $('timer').innerHTML = ICON_CLOCK + '<span id="timerTxt">3:00</span>';
+  $('score').innerHTML = ICON_COIN + '<span id="scoreTxt">0</span>';
+
+  let shownVersion = -1, barEls = [], lastThrowLabel = null;
+  function updateHUD() {
+    if (!orders) return;
+    const s = Math.max(0, Math.ceil(timeLeft));
+    const txt = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    if ($('timerTxt').textContent !== txt) $('timerTxt').textContent = txt;
+    $('timer').classList.toggle('low', s <= 20 && state === 'play');
+    if ($('scoreTxt').textContent !== String(score)) $('scoreTxt').textContent = score;
+
+    if (shownVersion !== ordersVersion) {
+      shownVersion = ordersVersion;
+      const box = $('orders');
+      box.innerHTML = '';
+      barEls = orders.map((o) => {
+        const el = document.createElement('div');
+        el.className = 'order';
+        el.innerHTML = `<div class="bar"><i></i></div><img class="dish" src="${sprURL(dishSpr(o.r.need))}" alt="${o.r.name}"><div class="ings">${o.r.need.map(ingIconHTML).join('')}</div><div class="name">${o.r.name}</div>`;
+        box.appendChild(el);
+        return el.querySelector('i');
+      });
+    }
+    orders.forEach((o, i) => {
+      const f = Math.max(0, o.time / o.max);
+      const el = barEls[i];
+      if (!el) return;
+      el.style.width = (f * 100).toFixed(1) + '%';
+      el.style.background = f > 0.5 ? '#5aa83c' : f > 0.25 ? '#f5b528' : '#e8492f';
+    });
+    if (isTouch && players[0]) {
+      const th = !!(players[0].held && players[0].held.kind === 'ing');
+      if (th !== lastThrowLabel) { lastThrowLabel = th; btnChop.textContent = th ? 'THROW' : 'CHOP'; btnChop.classList.toggle('throw', th); }
+    }
+  }
+
+  // =====================================================================
+  // MENU / BOOK / FLOW
+  // =====================================================================
+  function bestKey(dk, m) { return `chopchop2-best-${dk}-${m}`; }
+  function getBest(dk, m) { try { return +localStorage.getItem(bestKey(dk, m)) || 0; } catch (e) { return 0; } }
+
+  function renderMenu() {
+    $('foodRow').innerHTML = ['tomato:r', 'lettuce:r', 'onion:r', 'mushroom:r', 'carrot:r', 'meat:r', 'fish:r', 'shrimp:r', 'egg:r', 'pepper:r']
+      .map((t) => `<img src="${sprURL(foodSpr(t))}" alt="">`).join('');
+    $('diffs').innerHTML = DIFF_ORDER.map((k) => {
+      const d = DIFFS[k], n = RECIPES.filter((r) => d.tiers.includes(r.tier)).length;
+      const best = Math.max(getBest(k, 1), getBest(k, 2));
+      const chili = [1, 2, 3, 4].map((i) => `<i class="${i <= d.level ? '' : 'off'}"></i>`).join('');
+      return `<button class="diff ${k === diffKey ? 'sel' : ''}" data-k="${k}"><b>${d.name} <span class="chili">${chili}</span></b><span>${d.blurb}</span><em>${n} recipes · ${Math.round(d.time / 60 * 10) / 10} min${best ? ' · best ' + best : ''}</em></button>`;
+    }).join('');
+    $('diffs').querySelectorAll('.diff').forEach((b) => (b.onclick = () => {
+      diffKey = b.dataset.k;
+      try { localStorage.setItem('chopchop2-diff', diffKey); } catch (e) {}
+      renderMenu();
+      if (state === 'menu') { resetGame(); resize(); shownVersion = -1; }
+    }));
+  }
+
+  function buildBook() {
+    $('legend').innerHTML = [['knife', 'chop on a board'], ['pot', 'boil in a pot'], ['pan', 'fry in a pan']]
+      .map(([b, t]) => `<span><img src="${sprURL(uiSpr(b))}" alt="">${t}</span>`).join('') + '<span>no badge = use it as it comes</span>';
+    const tiers = [[1, 'Easy', ''], [2, 'Normal', 'adds'], [3, 'Hard', 'adds'], [4, 'Master Chef', 'adds']];
+    $('bookList').innerHTML = tiers.map(([t, label, sub]) => {
+      const list = RECIPES.filter((r) => r.tier === t);
+      return `<h3>${label} <small>${sub ? sub + ' ' : ''}${list.length} recipes</small></h3><div class="rgrid">${list.map((r) =>
+        `<div class="rcard"><img src="${sprURL(dishSpr(r.need))}" alt="${r.name}"><div><b>${r.name}</b><div class="ings">${r.need.map(ingIconHTML).join('')}</div><div class="pts">${r.pts} pts</div></div></div>`).join('')}</div>`;
+    }).join('');
+  }
+  let bookFrom = null;
+  function openBook(from) { bookFrom = from; if (!$('bookList').innerHTML) buildBook(); show(from, false); show('book', true); }
+  function closeBook() { show('book', false); if (bookFrom) show(bookFrom, true); }
+
+  function show(id, on) { $(id).classList.toggle('show', on); }
+  function startGame(m) {
+    mode = m;
+    resetGame();
+    shownVersion = -1;
+    show('menu', false); show('over', false); show('pause', false); show('book', false);
+    state = 'countdown'; countdown = 4;
+    resize();
+    tone(1, 0.01, 'sine', 0.0001);
+  }
+  function togglePause() {
+    if (state === 'play') { state = 'paused'; show('pause', true); }
+    else if (state === 'paused') { state = 'play'; show('pause', false); show('book', false); }
+  }
+  function endGame() {
+    state = 'over';
+    const stars = D.stars.filter((t) => score >= t).length;
+    $('stars').innerHTML = [0, 1, 2].map((i) => starSVG(i < stars)).join('');
+    $('finalScore').textContent = score;
+    $('statDelivered').textContent = delivered;
+    $('statFailed').textContent = failed;
+    const best = getBest(diffKey, mode);
+    try { if (score > best) localStorage.setItem(bestKey(diffKey, mode), score); } catch (e) {}
+    $('best').textContent = `${D.name} · ` + (score > best && score > 0 ? 'New best score!' : `Best: ${best}`);
+    const idx = DIFF_ORDER.indexOf(diffKey);
+    const next = DIFF_ORDER[idx + 1];
+    const nb = $('nextDiff');
+    if (next && stars >= 1) { nb.style.display = ''; nb.textContent = `Next: ${DIFFS[next].name}`; nb.onclick = () => { diffKey = next; try { localStorage.setItem('chopchop2-diff', next); } catch (e) {} startGame(mode); }; }
+    else nb.style.display = 'none';
+    show('over', true);
+    sfx.ding();
+  }
+  function toMenu() { state = 'menu'; show('over', false); show('pause', false); show('book', false); renderMenu(); resetGame(); resize(); shownVersion = -1; show('menu', true); }
+
+  $('play1').onclick = () => startGame(1);
+  $('play2').onclick = () => startGame(2);
+  $('resume').onclick = togglePause;
+  $('quit').onclick = toMenu;
+  $('again').onclick = () => startGame(mode);
+  $('toMenu').onclick = toMenu;
+  $('pauseBtn').onclick = togglePause;
+  $('openBook').onclick = () => openBook('menu');
+  $('pauseBook').onclick = () => openBook('pause');
+  $('closeBook').onclick = closeBook;
+
+  // ---------- self check (layouts contain everything their recipes need) ----------
+  (function selfCheck() {
+    for (const [k, d] of Object.entries(DIFFS)) {
+      const crates = new Set(); let pots = 0, pans = 0;
+      d.layout.forEach((row) => { if (row.length !== d.layout[0].length) console.warn(k, 'ragged row', row); [...row].forEach((c) => { if (CRATE[c]) crates.add(CRATE[c]); if (c === 'S') pots++; if (c === 'F') pans++; }); });
+      for (const r of RECIPES.filter((x) => d.tiers.includes(x.tier))) for (const t of r.need) {
+        const [n, s] = t.split(':');
+        if (!crates.has(n)) console.warn(`[${k}] ${r.name}: missing ${n} crate`);
+        if (s === 'b' && !pots) console.warn(`[${k}] ${r.name}: needs a pot`);
+        if (s === 'f' && !pans) console.warn(`[${k}] ${r.name}: needs a pan`);
+      }
+      // every station must touch a reachable floor tile
+      const W = d.layout[0].length, H = d.layout.length, at = (x, y) => (d.layout[y] || '')[x];
+      const seen = new Set(), q = [[Math.floor(d.solo[0]), Math.floor(d.solo[1])]];
+      while (q.length) { const [x, y] = q.pop(); const id = x + ',' + y; if (seen.has(id) || at(x, y) !== '.') continue; seen.add(id); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = at(x, y); if (c === '.' || c === '#') continue;
+        if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => seen.has(x + a + ',' + (y + b)))) console.warn(`[${k}] unreachable '${c}' at ${x},${y}`);
+      }
+    }
+  })();
+
+  // ---------- loop ----------
+  renderMenu();
+  resetGame();
+  resize();
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    update(dt);
+    draw(now / 1000);
+    updateHUD();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Small hook for automated testing
+  window.__chop = { get players() { return players; }, get tiles() { return tiles; }, get orders() { return orders; }, get state() { return state; }, get score() { return score; }, get floorItems() { return floorItems; }, setOrders(ids) { orders = ids.map((id) => { const r = RECIPES.find((x) => x.id === id); return { r, time: 999, max: 999, id: Math.random() }; }); ordersVersion++; } };
+})();
+</script>
+</body>
+</html>
